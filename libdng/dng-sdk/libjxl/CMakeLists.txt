@@ -20,6 +20,7 @@ endif()
 # if(POLICY CMP0083)
   cmake_policy(SET CMP0083 NEW)
 # endif()
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 project(LIBJXL LANGUAGES C CXX)
 

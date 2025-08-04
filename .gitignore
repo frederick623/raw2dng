@@ -59,3 +59,4 @@ build/
 # debug information files
 *.dwo
 raw2dng/config.h
+raw2dng/raw2dng

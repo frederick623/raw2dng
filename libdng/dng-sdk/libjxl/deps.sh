@@ -59,7 +59,6 @@ download_github() {
 
 
 main() {
-  mkdir third_party
   # Sources downloaded from a tarball.
   download_github third_party/brotli google/brotli
   download_github third_party/highway google/highway

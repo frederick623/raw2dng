@@ -10,6 +10,11 @@ FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
+execute_process( COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libjxl RESULT_VARIABLE DEPS_RESULT )
+if(NOT DEPS_RESULT EQUAL 0) 
+message(FATAL_ERROR "Failed to run libjxl/deps.sh") 
+endif()
+
 SET(JPEGXL_ENABLE_SJPEG FALSE)
 SET(JPEGXL_ENABLE_TOOLS FALSE)
 SET(BUILD_TESTING FALSE)
@@ -46,6 +51,7 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_iptc.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_jpeg_image.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_jxl.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_jpeg_memory_source.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_lens_correction.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_linearization_info.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_local_string.cpp
@@ -90,8 +96,8 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_xy_coord.cpp )
 
 TARGET_INCLUDE_DIRECTORIES( dng-sdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
-TARGET_INCLUDE_DIRECTORIES(dng-sdk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
-TARGET_LINK_DIRECTORIES(dng-sdk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
+TARGET_INCLUDE_DIRECTORIES(dng-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib/include)
+TARGET_LINK_DIRECTORIES(dng-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
 
 TARGET_COMPILE_DEFINITIONS( dng-sdk PUBLIC
                             -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
@@ -120,4 +126,4 @@ if (APPLE)
 endif()
 
 
-TARGET_LINK_LIBRARIES( dng-sdk PRIVATE xmp-sdk jxl jxl_cms jxl_threads ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )
+TARGET_LINK_LIBRARIES( dng-sdk PUBLIC xmp-sdk jxl jxl_threads ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )

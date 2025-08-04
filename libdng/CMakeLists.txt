@@ -1,5 +1,4 @@
 
-ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
 ADD_SUBDIRECTORY(dng-sdk)
 
@@ -18,5 +17,5 @@ TARGET_COMPILE_DEFINITIONS( dng PUBLIC
                             
 TARGET_COMPILE_OPTIONS( dng PRIVATE -fexceptions -std=c++11 )
 
-TARGET_LINK_LIBRARIES( dng PRIVATE jxl jxl_cms jxl_threads ${CMAKE_THREAD_LIBS_INIT} )
+TARGET_LINK_LIBRARIES( dng PUBLIC jxl jxl_threads ${CMAKE_THREAD_LIBS_INIT} )
     
