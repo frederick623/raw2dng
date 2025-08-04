@@ -86,13 +86,13 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
     // -----------------------------------------------------------------------------------------
     // ...and libexiv2
 
-    Exiv2::Image::AutoPtr rawImage;
+    Exiv2::Image::UniquePtr rawImage;
     try {
         rawImage = Exiv2::ImageFactory::open(filename);
         rawImage->readMetadata();
     } 
     catch (Exiv2::Error& e) {
-        std::stringstream error; error << "Exiv2-error while opening/parsing rawFile (code " << e.code() << "): " << e.what();
+        std::stringstream error; error << "Exiv2-error while opening/parsing rawFile (code " << static_cast<size_t>(e.code()) << "): " << e.what();
         throw std::runtime_error(error.str());
     }
 
@@ -115,8 +115,8 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
 }
 
 
-NegativeProcessor::NegativeProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::AutoPtr &rawImage)
-                                   : m_RawProcessor(rawProcessor), m_RawImage(rawImage),
+NegativeProcessor::NegativeProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr &rawImage)
+                                   : m_RawProcessor(rawProcessor), m_RawImage(std::move(rawImage)),
                                      m_RawExif(m_RawImage->exifData()), m_RawXmp(m_RawImage->xmpData()),
                                      m_host(host) {
     m_negative.Reset(m_host->Make_dng_negative());
@@ -757,7 +757,7 @@ bool NegativeProcessor::getRawExifTag(const char* exifTagName, int32 component, 
     Exiv2::ExifData::const_iterator it = m_RawExif.findKey(Exiv2::ExifKey(exifTagName));
     if ((it == m_RawExif.end()) || (it->count() < (component + 1))) return false;
 
-    *value = static_cast<uint32>(it->toLong(component));
+    *value = static_cast<uint32>(it->toInt64(component));
     return true;
 }
 
@@ -767,7 +767,7 @@ int NegativeProcessor::getRawExifTag(const char* exifTagName, uint32* valueArray
 
     int lengthToFill = std::min(maxFill, static_cast<int32>(it->count()));
     for (int i = 0; i < lengthToFill; i++)
-        valueArray[i] = static_cast<uint32>(it->toLong(i));
+        valueArray[i] = static_cast<uint32>(it->toInt64(i));
     return lengthToFill;
 }
 
@@ -777,7 +777,7 @@ int NegativeProcessor::getRawExifTag(const char* exifTagName, int16* valueArray,
 
     int lengthToFill = std::min(maxFill, static_cast<int32>(it->count()));
     for (int i = 0; i < lengthToFill; i++)
-        valueArray[i] = static_cast<int16>(it->toLong(i));
+        valueArray[i] = static_cast<int16>(it->toInt64(i));
     return lengthToFill;
 }
 

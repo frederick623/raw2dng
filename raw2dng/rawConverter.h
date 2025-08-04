@@ -24,8 +24,9 @@
 #include <string>
 
 #include "dng_auto_ptr.h"
-#include "dng_preview.h"
 #include "dng_string.h"
+#include "dng_image_writer.h"
+#include "dng_preview.h"
 #include "dng_date_time.h"
 
 

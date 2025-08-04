@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
+
 FIND_PACKAGE(Threads)
 
 FIND_PACKAGE( JPEG )
@@ -7,6 +9,11 @@ ADD_DEFINITIONS( ${JPEG_DEFINITIONS} )
 FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
+
+SET(JPEGXL_ENABLE_SJPEG FALSE)
+SET(JPEGXL_ENABLE_TOOLS FALSE)
+SET(BUILD_TESTING FALSE)
+ADD_SUBDIRECTORY(libjxl)
 
 # =======================================================
 # DNG SDK source code
@@ -38,6 +45,7 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_info.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_iptc.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_jpeg_image.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_jxl.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_lens_correction.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_linearization_info.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_local_string.cpp
@@ -82,9 +90,11 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_xy_coord.cpp )
 
 TARGET_INCLUDE_DIRECTORIES( dng-sdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
+TARGET_INCLUDE_DIRECTORIES(dng-sdk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
+TARGET_LINK_DIRECTORIES(dng-sdk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
 
 TARGET_COMPILE_DEFINITIONS( dng-sdk PUBLIC
-                            -DqWinOS=0 -DqMacOS=0 -DqLinux=1   # platform for dng-sdk
+                            -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
                             -DqDNGThreadSafe=1                 # we're thread-safe - will use pthreads
 #                           -DqDNG64Bit=1                      # set manually to support 64bit platforms (todo: add test)
                             -DqDNGDebug=0                      # do not compile debug code
@@ -101,4 +111,13 @@ ENDIF(NOT IS_BIG_ENDIAN)
 
 TARGET_COMPILE_OPTIONS( dng-sdk PRIVATE -fexceptions )
 
-TARGET_LINK_LIBRARIES( dng-sdk PRIVATE xmp-sdk ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )
+if (APPLE)
+    # Find the CoreFoundation framework
+    find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+    find_library(CORE_SERVICES CoreServices)
+    message ( ${CORE_FOUNDATION_FRAMEWORK})
+    TARGET_LINK_LIBRARIES(dng-sdk PRIVATE ${CORE_FOUNDATION_FRAMEWORK} ${CORE_SERVICES} )
+endif()
+
+
+TARGET_LINK_LIBRARIES( dng-sdk PRIVATE xmp-sdk jxl jxl_cms jxl_threads ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )

@@ -1,6 +1,10 @@
 PROJECT( raw2dng )
 
-CMAKE_MINIMUM_REQUIRED( VERSION 2.8 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.5 )
+
+# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
+# set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
+
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
@@ -9,3 +13,17 @@ ADD_COMPILE_OPTIONS( -Wall )
 
 ADD_SUBDIRECTORY( libdng )
 ADD_SUBDIRECTORY( raw2dng )
+
+# add_library(RawConverter STATIC
+#     rawConverterC.cpp  
+#     raw2dng/raw2dng.cpp 
+# )
+
+# target_include_directories(RawConverter PUBLIC
+#     ${CMAKE_CURRENT_SOURCE_DIR}
+# )
+
+# set(CMAKE_OSX_ARCHITECTURES "arm64")
+
+# install(TARGETS RawConverter DESTINATION lib)
+# install(FILES RawConverterC.h DESTINATION include)

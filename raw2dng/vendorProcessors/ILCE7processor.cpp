@@ -148,7 +148,7 @@ static CalibrationMatrix CalibrationLenses[2] = {
 
 class ILCE7_noise_profile : public dng_noise_profile {
 public:
-    ILCE7_noise_profile(unsigned int iso) : dng_noise_profile(std::vector<dng_noise_function>(3)) {
+    ILCE7_noise_profile(unsigned int iso) : dng_noise_profile(dng_std_vector<dng_noise_function>(3)) {
         for (int i = 0; i < 28; i++)
             if (ISOlist[i] == iso) {
                 for (int j = 0; j < 3; j++) {
@@ -161,7 +161,7 @@ public:
 };
 
 
-ILCE7processor::ILCE7processor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::AutoPtr &rawImage)
+ILCE7processor::ILCE7processor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr &rawImage)
                              : NegativeProcessor(host, rawProcessor, rawImage) {}
 
 
@@ -187,20 +187,22 @@ void ILCE7processor::setDNGPropertiesFromRaw() {
 
     int16 tag_CA_plane[33];
     if (getRawExifTag("Exif.SubImage1.0x7035", tag_CA_plane, 33) == 33) {
-        dng_vector radialParams[3];
+        dng_warp_params_radial radialParams;
         dng_vector tangentialParams[3];
-
+        
         for (int plane = 0; plane < 3; plane++) {
-            radialParams[plane].SetIdentity(4);
+            dng_vector radial;
+            radial.SetIdentity(4);
             if (plane != 1) {
                 int tagIndex = (plane == 2) ? 17 : 1;
                 for (int param = 0; param < 4; param++) {
-                    radialParams[plane][param] = 0;
+                    radial[param] = 0;
                     for (int base = 0; base < 16; base++)
-                        radialParams[plane][param] += (tag_CA_plane[tagIndex + base] / 128 * 
+                        radial[param] += (tag_CA_plane[tagIndex + base] / 128 * 
                                                        CACorrectionBaseFunctions[base][param]);
                 }
-                radialParams[plane][0] += 1;
+                radial[0] += 1;
+                radialParams.SetWarpRectilinear_1_3(plane, radial);
             }
 
             tangentialParams[plane].SetIdentity(2);
@@ -208,10 +210,13 @@ void ILCE7processor::setDNGPropertiesFromRaw() {
             tangentialParams[plane][1] = 0;
         }
 
-        radialParams[1][0] = 1;
-        radialParams[1][1] = 0;
-        radialParams[1][2] = 0;
-        radialParams[1][3] = 0;
+        dng_vector radial;
+        radial.SetIdentity(4);
+        radial[0] = 1;
+        radial[1] = 0;
+        radial[2] = 0;
+        radial[3] = 0;
+        radialParams.SetWarpRectilinear_1_3(1, radial);
 
         dng_warp_params_rectilinear CAcorrection(3, radialParams, tangentialParams,
                                                  dng_point_real64(0.5, 0.5));
@@ -335,7 +340,7 @@ dng_memory_stream* ILCE7processor::createDNGPrivateTag() {
 
         Exiv2::TiffParser::decode(ee, ii, xx, SR2IFD, 114);
     }
-    catch (Exiv2::AnyError& e) {
+    catch (Exiv2::Error& e) {
         std::stringstream error; error << "Cannot open/parse proprietary Sony SR2-IFD! Exiv2 report: " << e.what();
         throw std::runtime_error(error.str());
     }
@@ -350,8 +355,8 @@ dng_memory_stream* ILCE7processor::createDNGPrivateTag() {
     // SR2SubIFD by 114 bytes. This version doesn't replicate the bug and writes the complete IFD
 
     if ((it_offset != ee.end()) && (it_length != ee.end())) {
-        uint32_t SR2SubOffset = static_cast<uint32>(it_offset->toLong(0));
-        uint32_t SR2SubLength = static_cast<uint32>(it_length->toLong(0));
+        uint32_t SR2SubOffset = static_cast<uint32>(it_offset->toUint32(0));
+        uint32_t SR2SubLength = static_cast<uint32>(it_length->toUint32(0));
 
         uint32_t fullLength = SR2SubOffset - SR2offset + SR2SubLength;
         bool padding = (fullLength & 0x01) == 0x01;

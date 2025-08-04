@@ -22,6 +22,7 @@
 #include <stdexcept>
 
 #include "dng_negative.h"
+#include "dng_image_writer.h"
 #include "dng_preview.h"
 #include "dng_xmp_sdk.h"
 #include "dng_memory_stream.h"
@@ -170,7 +171,7 @@ void RawConverter::renderPreviews() {
     thumbnail->fInfo.fColorSpace         = jpeg_preview->fInfo.fColorSpace;
 
     negRender.SetMaximumSize(256);
-    thumbnail->fImage.Reset(negRender.Render());
+    thumbnail->SetImage(*m_host, negRender.Render());
     AutoPtr<dng_preview> tn(dynamic_cast<dng_preview*>(thumbnail));
     m_previewList->Append(tn);
 }
@@ -213,7 +214,7 @@ void RawConverter::writeTiff(const std::string outFilename) {
     try {
         dng_image_writer tiffWriter; 
         tiffWriter.WriteTIFF(*m_host, *targetFile, *negImage.Get(), piRGB, ccUncompressed,
-                             m_negProcessor->getNegative(), &dng_space_sRGB::Get(), NULL,
+                             &m_negProcessor->getNegative()->Metadata(), &dng_space_sRGB::Get(), NULL,
                              dynamic_cast<const dng_jpeg_preview*>(&m_previewList->Preview(1)));
     }
     catch (dng_exception& e) {
@@ -338,7 +339,7 @@ void RawConverter::writeJpeg(const std::string outFilename) {
         }
 
         // write remaining JPEG structure/data from libjpeg minus the JFIF-header
-        targetFile->Put((uint8*) jpeg->fCompressedData->Buffer() + jfifHeaderLength, jpeg->fCompressedData->LogicalSize() - jfifHeaderLength);
+        targetFile->Put((uint8*) jpeg->CompressedData().Buffer() + jfifHeaderLength, jpeg->CompressedData().LogicalSize() - jfifHeaderLength);
 
         targetFile->Flush();
     }
