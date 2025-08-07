@@ -1,10 +1,10 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+ // =================================================================================================
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -18,22 +18,22 @@
 
 
 #define EMPTY_FILE_PATH ""
-#define XMP_FILESIO_STATIC_START try { int a;
+#define XMP_FILESIO_STATIC_START try { /* int a;*/
 #define XMP_FILESIO_STATIC_END1(errorCallbackPtr, filePath, severity)											\
-		a = 1;																									\
+		/*a = 1;*/																									\
 	} catch ( XMP_Error & error ) {																				\
 		if ( (errorCallbackPtr) != NULL ) (errorCallbackPtr)->NotifyClient ( (severity), error, (filePath) );	\
 		else throw;																								\
 	}
-#define XMP_FILESIO_START try { int b;
+#define XMP_FILESIO_START try { /*int b;*/
 #define XMP_FILESIO_END1(severity)																				\
-		b = 1;																									\
+		/*b = 1;*/																									\
 	} catch ( XMP_Error & error ) {																				\
 		if ( errorCallback != NULL ) errorCallback->NotifyClient ( (severity), error, filePath.c_str() );		\
 		else throw;																								\
 	}
 #define XMP_FILESIO_END2(filePath, severity)																	\
-		b = 1;																									\
+	/*	b = 1;*/																									\
 	} catch ( XMP_Error & error ) {																				\
 		if ( errorCallback != NULL ) errorCallback->NotifyClient ( (severity), error, (filePath) );				\
 		else throw;																								\
@@ -98,8 +98,8 @@ XMPFiles_IO::XMPFiles_IO (
 	, currOffset(0)
 	, isTemp(false)
 	, derivedTemp(0)
-	, errorCallback(_errorCallback)
 	, progressTracker(_progressTracker)
+	, errorCallback(_errorCallback)
 {
 	XMP_FILESIO_START
 	XMP_Assert ( this->fileRef != Host_IO::noFileRef );
@@ -129,7 +129,7 @@ XMPFiles_IO::~XMPFiles_IO()
 // XMPFiles_IO::operator=
 // ======================
 
-void XMPFiles_IO::operator = ( const XMP_IO& in )
+void XMPFiles_IO::operator = ( const XMP_IO& /*in*/ )
 {
 	XMP_FILESIO_START
 	XMP_Throw ( "No assignment for XMPFiles_IO", kXMPErr_InternalFailure );

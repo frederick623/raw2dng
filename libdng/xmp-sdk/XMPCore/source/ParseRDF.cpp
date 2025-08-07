@@ -1,21 +1,18 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
-#include "XMPCore/source/XMPCore_Impl.hpp"
-#include "XMPCore/source/XMPMeta.hpp"
-#include "source/ExpatAdapter.hpp"
-
-#include <cstring>
-
 #if DEBUG
 	#include <iostream>
 #endif
+#include "XMPCore/source/XMPCore_Impl.hpp"
+#include "XMPCore/source/XMPMeta.hpp"
+#include "source/ExpatAdapter.hpp"
 
 using namespace std;
 
@@ -315,18 +312,7 @@ GetRDFTermKind ( const XMP_VarString & name )
 // =================================================================================================
 
 static void
-RemoveChild ( XMP_Node * xmpParent, size_t index )
-{
-	XMP_Node * child = xmpParent->children[index];
-	xmpParent->children.erase ( xmpParent->children.begin() + index );
-	delete child;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-//FORK: add "XX" to resolve ambiguity when compiling on Android
-static void
-RemoveQualifierXX ( XMP_Node * xmpParent, size_t index )
+RemoveQualifier ( XMP_Node * xmpParent, size_t index )
 {
 	XMP_Node * qualifier = xmpParent->qualifiers[index];
 	xmpParent->qualifiers.erase ( xmpParent->qualifiers.begin() + index );
@@ -360,20 +346,6 @@ IsCoreSyntaxTerm ( RDFTermKind term )
 }
 
 // -------------------------------------------------------------------------------------------------
-// IsSyntaxTerm
-// ------------
-//
-// 7.2.3 syntaxTerms
-//		coreSyntaxTerms | rdf:Description | rdf:li
-
-static bool
-IsSyntaxTerm ( RDFTermKind term )
-{
-	if 	( (kRDFTerm_FirstSyntax <= term) && (term <= kRDFTerm_LastSyntax) ) return true;
-	return false;
-}
-
-// -------------------------------------------------------------------------------------------------
 // IsOldTerm
 // ---------
 //
@@ -385,20 +357,6 @@ IsOldTerm ( RDFTermKind term )
 {
 	if 	( (kRDFTerm_FirstOld <= term) && (term <= kRDFTerm_LastOld) ) return true;
 	return false;
-}
-
-// -------------------------------------------------------------------------------------------------
-// IsNodeElementName
-// -----------------
-//
-// 7.2.5 nodeElementURIs
-//		anyURI - ( coreSyntaxTerms | rdf:li | oldTerms )
-
-static bool
-IsNodeElementName ( RDFTermKind term )
-{
-	if 	( (term == kRDFTerm_li) || IsOldTerm ( term ) ) return false;
-	return (! IsCoreSyntaxTerm ( term ));
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -416,20 +374,6 @@ IsPropertyElementName ( RDFTermKind term )
 }
 
 // -------------------------------------------------------------------------------------------------
-// IsPropertyAttributeName
-// -----------------------
-//
-// 7.2.7 propertyAttributeURIs
-//		anyURI - ( coreSyntaxTerms | rdf:Description | rdf:li | oldTerms )
-
-static bool
-IsPropertyAttributeName ( RDFTermKind term )
-{
-	if 	( (term == kRDFTerm_Description) || (term == kRDFTerm_li) || IsOldTerm ( term ) ) return false;
-	return (! IsCoreSyntaxTerm ( term ));
-}
-
-// -------------------------------------------------------------------------------------------------
 // IsNumberedArrayItemName
 // -----------------------
 //
@@ -442,7 +386,7 @@ IsNumberedArrayItemName ( const std::string & name )
 	if ( name.size() <= 5 ) return false;
 	if ( strncmp ( name.c_str(), "rdf:_", 5 ) != 0 ) return false;
 	for ( size_t i = 5; i < name.size(); ++i ) {
-		if ( (name[i] < '0') | (name[i] > '9') ) return false;
+		if ( (name[i] < '0') || (name[i] > '9') ) return false;
 	}
 	return true;
 }
@@ -629,7 +573,7 @@ void RDF_Parser::FixupQualifiedNode ( XMP_Node * xmpParent )
 			XMP_Error error ( kXMPErr_BadXMP, "Duplicate xml:lang for rdf:value element" );
 			this->errorCallback->NotifyClient ( kXMPErrSev_Recoverable, error );
 			XMP_Assert ( xmpParent->qualifiers[0]->name == "xml:lang" );
-			RemoveQualifierXX ( xmpParent, 0 );	// Use the rdf:value node's language.
+			RemoveQualifier ( xmpParent, 0 );	// Use the rdf:value node's language.
 		}
 
 		XMP_Node * langQual = valueNode->qualifiers[0];

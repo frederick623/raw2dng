@@ -2,11 +2,11 @@
 #define __XMLParserAdapter_hpp__
 
 // =================================================================================================
-// Copyright 2005 Adobe Systems Incorporated
+// Copyright 2005 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
@@ -90,10 +90,10 @@ public:
 	void ClearNode();
 
 	XML_Node ( XML_NodePtr _parent, XMP_StringPtr _name, XMP_Uns8 _kind )
-		: kind(_kind), name(_name), parent(_parent), nsPrefixLen(0) {};
+		: kind(_kind), name(_name), nsPrefixLen(0), parent(_parent) {};
 
 	XML_Node ( XML_NodePtr _parent, const std::string & _name, XMP_Uns8 _kind )
-		: kind(_kind), name(_name), parent(_parent), nsPrefixLen(0) {};
+		: kind(_kind), name(_name), nsPrefixLen(0), parent(_parent) {};
 
 	virtual ~XML_Node() { RemoveAttrs(); RemoveContent(); };
 

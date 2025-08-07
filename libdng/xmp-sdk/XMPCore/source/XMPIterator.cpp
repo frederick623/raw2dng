@@ -1,18 +1,19 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
-#include "XMPCore/source/XMPCore_Impl.hpp"
-
-#include "XMPCore/source/XMPIterator.hpp"
 
 #include <string>
 #include <stdio.h>	// For snprintf.
+
+#include "XMPCore/source/XMPCore_Impl.hpp"
+
+#include "XMPCore/source/XMPIterator.hpp"
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4702 )	// unreachable code
@@ -42,7 +43,7 @@ static XMP_Node * sDummySchema = 0;	// ! Used for some ugliness with aliases.
 // Add the top level properties to the IterNode for a schema.
 
 static void
-AddSchemaProps ( IterInfo & info, IterNode & iterSchema, const XMP_Node * xmpSchema )
+AddSchemaProps ( IterInfo & /*info*/, IterNode & iterSchema, const XMP_Node * xmpSchema )
 {
 	#if TraceIterators
 		printf ( "    Adding properties of %s\n", xmpSchema->name.c_str() );
@@ -114,7 +115,7 @@ AddNodeOffspring ( IterInfo & info, IterNode & iterParent, const XMP_Node * xmpP
 				currPath += xmpChild->name;
 			} else {
 				char buffer [32];	// AUDIT: Using sizeof(buffer) below for snprintf length is safe.
-				snprintf ( buffer, sizeof(buffer), "[%lu]", childNum+1 );	// ! XPath indices are one-based.
+				snprintf ( buffer, sizeof(buffer), "[%lu]", (unsigned long)childNum+1 );	// ! XPath indices are one-based.
 				currPath += buffer;
 			}
 			iterParent.children.push_back ( IterNode ( xmpChild->options, currPath, leafOffset ) );
@@ -367,7 +368,7 @@ XMPIterator::Terminate() RELEASE_NO_THROW
 XMPIterator::XMPIterator ( const XMPMeta & xmpObj,
 						   XMP_StringPtr   schemaNS,
 						   XMP_StringPtr   propName,
-						   XMP_OptionBits  options ) : info(IterInfo(options,&xmpObj)), clientRefs(0)
+						   XMP_OptionBits  options ) : clientRefs(0), info(IterInfo(options,&xmpObj))
 {
 	if ( (options & kXMP_IterClassMask) != kXMP_IterProperties ) {
 		XMP_Throw ( "Unsupported iteration kind", kXMPErr_BadOptions );
@@ -480,22 +481,6 @@ XMPIterator::XMPIterator ( const XMPMeta & xmpObj,
 }	// XMPIterator for XMPMeta objects
 
 // -------------------------------------------------------------------------------------------------
-// XMPIterator
-// -----------
-//
-// Constructor for iterations over global tables such as registered namespaces or aliases.
-
-XMPIterator::XMPIterator ( XMP_StringPtr  schemaNS,
-						   XMP_StringPtr  propName,
-						   XMP_OptionBits options ) : info(IterInfo(options,0)), clientRefs(0)
-{
-
-	XMP_Throw ( "Unimplemented XMPIterator constructor for global tables", kXMPErr_Unimplemented );
-		void * p; p = &schemaNS; p = &propName; p = &options;	// Avoid unused param warnings.
-
-}	// XMPIterator for global tables
-
-// -------------------------------------------------------------------------------------------------
 // ~XMPIterator
 // -----------
 
@@ -553,7 +538,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 	}
 	
 	*schemaNS = info.currSchema.c_str();
-	*nsSize   = info.currSchema.size();
+	*nsSize   = static_cast<XMP_StringLen>(info.currSchema.size());
 
 	*propOptions = info.currPos->options;
 
@@ -565,7 +550,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 	if ( ! (*propOptions & kXMP_SchemaNode) ) {
 
 		*propPath = info.currPos->fullPath.c_str();
-		*pathSize = info.currPos->fullPath.size();
+		*pathSize = static_cast<XMP_StringLen>(info.currPos->fullPath.size());
 
 		if ( info.options & kXMP_IterJustLeafName ) {
 			*propPath += info.currPos->leafOffset;
@@ -575,7 +560,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 		
 		if ( ! (*propOptions & kXMP_PropCompositeMask) ) {
 			*propValue = xmpNode->value.c_str();
-			*valueSize = xmpNode->value.size();
+			*valueSize = static_cast<XMP_StringLen>(xmpNode->value.size());
 		}
 
 	}

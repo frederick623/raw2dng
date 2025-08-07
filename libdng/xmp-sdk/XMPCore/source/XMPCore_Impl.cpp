@@ -1,18 +1,16 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
 #include "public/include/XMP_Version.h"
 #include "XMPCore/source/XMPCore_Impl.hpp"
 #include "XMPCore/source/XMPMeta.hpp"	// *** For use of GetNamespacePrefix in FindSchemaNode.
-
 #include "source/UnicodeInlines.incl_cpp"
-
 #include <algorithm>
 
 using namespace std;
@@ -32,6 +30,11 @@ using namespace std;
 	#if ! MAC_ENV
 		#error "MAC_ENV must be defined so that \"#if MAC_ENV\" is true"
 	#endif
+	#if defined(IOS_ENV)
+		#if ! IOS_ENV
+			#error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+		#endif
+    #endif
 #elif defined ( WIN_ENV )
 	#if ! WIN_ENV
 		#error "WIN_ENV must be defined so that \"#if WIN_ENV\" is true"
@@ -43,6 +46,14 @@ using namespace std;
 #elif defined ( IOS_ENV )
     #if ! IOS_ENV
         #error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+    #endif
+#elif defined(WIN_UNIVERSAL_ENV)
+	#if !WIN_UNIVERSAL_ENV
+		#error "WIN_UNIVERSAL_ENV must be defined so that \"#if WIN_UNIVERSAL_ENV\" is true"
+	#endif
+#elif defined ( ANDROID_ENV )
+    #if ! ANDROID_ENV
+        #error "ANDROID_ENV must be defined so that \"#if ANDROID_ENV\" is true"
     #endif
 #endif
 
@@ -56,17 +67,83 @@ XMP_NamespaceTable * sRegisteredNamespaces = 0;
 
 XMP_AliasMap * sRegisteredAliasMap = 0;
 
-void *              voidVoidPtr    = 0;	// Used to backfill null output parameters.
-XMP_StringPtr		voidStringPtr  = 0;
-XMP_StringLen		voidStringLen  = 0;
-XMP_OptionBits		voidOptionBits = 0;
-XMP_Uns8			voidByte       = 0;
-bool				voidBool       = 0;
-XMP_Int32			voidInt32      = 0;
-XMP_Int64			voidInt64      = 0;
-double				voidDouble     = 0.0;
-XMP_DateTime		voidDateTime;
-WXMP_Result 		void_wResult;
+XMP_ReadWriteLock * sDefaultNamespacePrefixMapLock = 0;
+
+
+// *** CTECHXMP-4169947 ***//
+
+//void *              voidVoidPtr    = 0;	// Used to backfill null output parameters.
+//XMP_StringPtr		voidStringPtr  = 0;
+//XMP_StringLen		voidStringLen  = 0;
+//XMP_OptionBits		voidOptionBits = 0;
+//XMP_Uns8			voidByte       = 0;
+//bool				voidBool       = 0;
+//XMP_Int32			voidInt32      = 0;
+//XMP_Int64			voidInt64      = 0;
+//double				voidDouble     = 0.0;
+//XMP_DateTime		voidDateTime;
+//WXMP_Result 		void_wResult;
+
+
+
+	#if ENABLE_CPP_DOM_MODEL
+		XMP_Bool         sUseNewCoreAPIs = false;
+	#endif
+
+	#if ! XMP_StaticBuild
+
+		#undef malloc
+		#undef free
+		typedef void * (*XMP_AllocateProc) (size_t size);
+
+		typedef void(*XMP_DeleteProc)   (void * ptr);
+
+	XMP_AllocateProc sXMP_MemAlloc = malloc;
+	XMP_DeleteProc   sXMP_MemFree  = free;
+
+
+//******* SEE : CTECHXMP-4169971 *************//
+#if 0
+		#define malloc(size) (*sXMP_MemAlloc) ( size )
+		#define free(addr)   (*sXMP_MemFree) ( addr )
+		
+		void * operator new ( size_t len ) throw ( std::bad_alloc )
+		{
+			void * mem = (*sXMP_MemAlloc) ( len );
+			if ( (mem == 0) && (len != 0) ) throw std::bad_alloc();
+			return mem;
+		}
+
+        void * operator new( std::size_t len, const std::nothrow_t & _nothrow ) throw () {
+            void * mem = (*sXMP_MemAlloc) ( len );
+            return mem;
+        }
+		
+		void * operator new[] ( size_t len ) throw ( std::bad_alloc )
+		{
+			void * mem = (*sXMP_MemAlloc) ( len );
+			if ( (mem == 0) && (len != 0) ) throw std::bad_alloc();
+			return mem;
+		}
+		
+		void operator delete ( void * ptr ) throw()
+		{
+			if ( ptr != 0 ) (*sXMP_MemFree) ( ptr );
+		}
+		
+		void operator delete ( void * ptr, const std::nothrow_t & _nothrow ) throw ()
+		{
+			return operator delete( ptr );
+		}
+		
+		void operator delete[] ( void * ptr ) throw()
+		{
+			if ( ptr != 0 ) (*sXMP_MemFree) ( ptr );
+		}
+#endif
+
+#endif
+
 
 // =================================================================================================
 // Local Utilities
@@ -212,7 +289,7 @@ FindIndexedItem ( XMP_Node * arrayNode, const XMP_VarString & indexStep, bool cr
 // The value portion is a string quoted by ''' or '"'. The value may contain any character including
 // a doubled quoting character. The value may be empty.
 
-static void
+void
 SplitNameAndValue ( const XMP_VarString & selStep, XMP_VarString * nameStr, XMP_VarString * valueStr )
 {
 	XMP_StringPtr partBegin = selStep.c_str();
@@ -263,7 +340,7 @@ SplitNameAndValue ( const XMP_VarString & selStep, XMP_VarString * nameStr, XMP_
 static XMP_Index
 LookupQualSelector ( XMP_Node * arrayNode, const XMP_VarString & qualName, XMP_VarString & qualValue )
 {
-	XMP_Index index;
+	size_t index;
 		
 	if ( qualName == "xml:lang" ) {
 	
@@ -273,7 +350,7 @@ LookupQualSelector ( XMP_Node * arrayNode, const XMP_VarString & qualName, XMP_V
 	
 	} else {
 
-		XMP_Index itemLim;
+		size_t itemLim;
 		for ( index = 0, itemLim = arrayNode->children.size(); index != itemLim; ++index ) {
 
 			const XMP_Node * currItem = arrayNode->children[index];
@@ -293,7 +370,7 @@ LookupQualSelector ( XMP_Node * arrayNode, const XMP_VarString & qualName, XMP_V
 
 	}
 	
-	return index;
+	return static_cast<XMP_Index>( index );
 	
 }	// LookupQualSelector
 
@@ -348,7 +425,7 @@ FollowXPathStep	( XMP_Node *	   parentNode,
 		if ( stepKind == kXMP_ArrayIndexStep ) {
 			index = FindIndexedItem ( parentNode, nextStep.step, createNodes );
 		} else if ( stepKind == kXMP_ArrayLastStep ) {
-			index = parentNode->children.size() - 1;
+			index = static_cast<XMP_Index>( parentNode->children.size() - 1 );
 		} else if ( stepKind == kXMP_FieldSelectorStep ) {
 			XMP_VarString fieldName, fieldValue;
 			SplitNameAndValue ( nextStep.step, &fieldName, &fieldValue );
@@ -588,9 +665,10 @@ ExpandXPath	( XMP_StringPtr			schemaNS,
 	XMP_Assert ( (schemaNS != 0) && (propPath != 0) && (*propPath != 0) && (expandedXPath != 0) );
 	
 	XMP_StringPtr	stepBegin, stepEnd;
-	XMP_StringPtr	qualName, nameEnd;
+	XMP_StringPtr	qualName = 0 , nameEnd = 0;
 	XMP_VarString	currStep;
 		
+	qualName = nameEnd = NULL;
 	size_t resCount = 2;	// Guess at the number of steps. At least 2, plus 1 for each '/' or '['.
 	for ( stepEnd = propPath; *stepEnd != 0; ++stepEnd ) {
 		if ( (*stepEnd == '/') || (*stepEnd == '[') ) ++resCount;
@@ -748,7 +826,9 @@ XMP_Node *
 FindSchemaNode	( XMP_Node *		xmpTree,
 				  XMP_StringPtr		nsURI,
 				  bool				createNodes,
-				  XMP_NodePtrPos *	ptrPos /* = 0 */ )
+				  XMP_NodePtrPos *	ptrPos /* = 0 */,
+				  PrefixSearchFnPtr prefixSearchFnPtr/* = NULL*/,
+				  void * privateData/* = NULL*/ )
 {
 	XMP_Node * schemaNode = 0;
 	
@@ -771,7 +851,21 @@ FindSchemaNode	( XMP_Node *		xmpTree,
 		try {
 			XMP_StringPtr prefixPtr;
 			XMP_StringLen prefixLen;
-			bool found = XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
+#if XMP_DebugBuild
+			bool found;
+#endif
+			if (prefixSearchFnPtr && privateData) {
+#if XMP_DebugBuild
+				found =
+#endif
+					prefixSearchFnPtr ( privateData, nsURI, &prefixPtr, &prefixLen );
+			}
+			else {
+#if XMP_DebugBuild
+				found =
+#endif
+					XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
+			}
 			XMP_Assert ( found );
 			schemaNode->value.assign ( prefixPtr, prefixLen );
 		} catch (...) {	// Don't leak schemaNode in case of an exception before adding it to the children vector.
@@ -919,7 +1013,7 @@ FindQualifierNode	( XMP_Node *		parent,
 XMP_Index
 LookupFieldSelector ( const XMP_Node * arrayNode, XMP_StringPtr fieldName, XMP_StringPtr fieldValue )
 {
-	XMP_Index index, itemLim;
+	size_t index, itemLim;
 	
 	for ( index = 0, itemLim = arrayNode->children.size(); index != itemLim; ++index ) {
 
@@ -942,7 +1036,7 @@ LookupFieldSelector ( const XMP_Node * arrayNode, XMP_StringPtr fieldName, XMP_S
 	}
 	
 	if ( index == itemLim ) index = -1;
-	return index;
+	return static_cast<XMP_Index>( index );
 	
 }	// LookupFieldSelector
 
@@ -959,8 +1053,8 @@ LookupLangItem ( const XMP_Node * arrayNode, XMP_VarString & lang )
 		XMP_Throw ( "Language item must be used on array", kXMPErr_BadXPath );
 	}
 
-	XMP_Index index   = 0;
-	XMP_Index itemLim = arrayNode->children.size();
+	size_t index   = 0;
+	size_t itemLim = arrayNode->children.size();
 	
 	for ( ; index != itemLim; ++index ) {
 		const XMP_Node * currItem = arrayNode->children[index];
@@ -970,7 +1064,7 @@ LookupLangItem ( const XMP_Node * arrayNode, XMP_VarString & lang )
 	}
 	
 	if ( index == itemLim ) index = -1;
-	return index;
+	return static_cast<XMP_Index>( index );
 	
 }	// LookupLangItem
 

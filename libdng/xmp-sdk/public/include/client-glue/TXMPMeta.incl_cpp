@@ -17,14 +17,13 @@
 
 #include "client-glue/WXMPMeta.hpp"
 
-#if INCLUDE_XMP_NEW_DOM_MODEL
-	#include "XMPCore/XMPCore_Defines.h"
 
-	#if ENABLE_NEW_DOM_MODEL
-		#include "XMPCore/XMPCore_Defines.h"
-		#include "XMPCore/Interfaces/IXMPDOMFactory.h"
-	#endif
+#include "XMPCore/XMPCoreDefines.h"
+#if ENABLE_CPP_DOM_MODEL
+	#include "XMPCore/Interfaces/IMetadata.h"
+	#include "XMPCore/Interfaces/ICoreObjectFactory.h"
 #endif
+
 
 // =================================================================================================
 // Implementation Guidelines
@@ -126,8 +125,8 @@ Initialize()
 
 	WrapCheckBool ( ok, zXMPMeta_Initialize_1() );
 
-	#if ENABLE_NEW_DOM_MODEL
-		NS_XMPCOMMON::IXMPDOMFactory_latest::CreateInstance();
+	#if ENABLE_CPP_DOM_MODEL
+			AdobeXMPCore::ICoreObjectFactory::SetupCoreObjectFactory();
 	#endif
 
 	return ok;
@@ -138,6 +137,11 @@ Initialize()
 XMP_MethodIntro(TXMPMeta,void)::
 Terminate()
 {
+	
+	#if ENABLE_CPP_DOM_MODEL
+		AdobeXMPCore::ICoreObjectFactory::DestroyCoreObjectFactory();
+	#endif
+
 	WrapNoCheckVoid ( zXMPMeta_Terminate_1() );
 
 	#if XMP_TraceClientCallsToFile
@@ -180,7 +184,6 @@ TXMPMeta ( const TXMPMeta<tStringObj> & original ) : xmpRef(original.xmpRef)
 }
 
 // -------------------------------------------------------------------------------------------------
-
 XMP_MethodIntro(TXMPMeta,void)::
 operator= ( const TXMPMeta<tStringObj> & rhs )
 {
@@ -258,16 +261,6 @@ GetGlobalOptions()
 
 // -------------------------------------------------------------------------------------------------
 
-XMP_MethodIntro(TXMPMeta,void)::
-SetGlobalOptions ( XMP_OptionBits options )
-{
-	WrapCheckVoid ( zXMPMeta_SetGlobalOptions_1 ( options ) );
-}
-
-// -------------------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------------------------------------------
-
 XMP_MethodIntro(TXMPMeta,XMP_Status)::
 DumpNamespaces ( XMP_TextOutputProc outProc,
                  void *             refCon )
@@ -306,14 +299,6 @@ GetNamespaceURI ( XMP_StringPtr namespacePrefix,
 {
 	WrapCheckBool ( found, zXMPMeta_GetNamespaceURI_1 ( namespacePrefix, namespaceURI, SetClientString ) );
 	return found;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_MethodIntro(TXMPMeta,void)::
-DeleteNamespace ( XMP_StringPtr namespaceURI )
-{
-	WrapCheckVoid ( zXMPMeta_DeleteNamespace_1 ( namespaceURI ) );
 }
 
 // =================================================================================================
@@ -792,14 +777,6 @@ GetObjectOptions() const
 {
 	WrapCheckOptions ( options, zXMPMeta_GetObjectOptions_1() );
 	return options;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_MethodIntro(TXMPMeta,void)::
-SetObjectOptions ( XMP_OptionBits options )
-{
-	WrapCheckVoid ( zXMPMeta_SetObjectOptions_1 ( options ) );
 }
 
 // -------------------------------------------------------------------------------------------------

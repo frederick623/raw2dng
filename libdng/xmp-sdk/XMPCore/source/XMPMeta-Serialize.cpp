@@ -1,15 +1,20 @@
 // =================================================================================================
-// Copyright 2003-2009 Adobe Systems Incorporated
+// Copyright 2003-2009 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
+
+#if XMP_DebugBuild
+	#include <iostream>
+#endif
+
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
 #include "XMPCore/source/XMPMeta.hpp"
@@ -17,11 +22,7 @@
 #include "public/include/XMP_Version.h"
 #include "source/UnicodeInlines.incl_cpp"
 #include "source/UnicodeConversions.hpp"
-#include <MD5.h>
-
-#if XMP_DebugBuild
-	#include <iostream>
-#endif
+#include "MD5.h"
 
 using namespace std;
 
@@ -44,7 +45,7 @@ using namespace std;
 static const char * kPacketHeader  = "<?xpacket begin=\"\xEF\xBB\xBF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>";
 static const char * kPacketTrailer = "<?xpacket end=\"w\"?>";	// ! The w/r is at [size-4].
 
-static const char * kTXMP_SchemaGroup = "XMP_SchemaGroup";
+//static const char * kTXMP_SchemaGroup = "XMP_SchemaGroup";
 
 static const char * kRDF_XMPMetaStart = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"";
 static const char * kRDF_XMPMetaEnd   = "</x:xmpmeta>";
@@ -59,19 +60,19 @@ static const char * kRDF_StructStart  = "<rdf:Description>";
 static const char * kRDF_StructEnd    = "</rdf:Description>";
 
 static const char * kRDF_BagStart     = "<rdf:Bag>";
-static const char * kRDF_BagEnd       = "</rdf:Bag>";
+//static const char * kRDF_BagEnd       = "</rdf:Bag>";
 
-static const char * kRDF_SeqStart     = "<rdf:Seq>";
-static const char * kRDF_SeqEnd       = "</rdf:Seq>";
+//static const char * kRDF_SeqStart     = "<rdf:Seq>";
+//static const char * kRDF_SeqEnd       = "</rdf:Seq>";
 
-static const char * kRDF_AltStart     = "<rdf:Alt>";
-static const char * kRDF_AltEnd       = "</rdf:Alt>";
+//static const char * kRDF_AltStart     = "<rdf:Alt>";
+//static const char * kRDF_AltEnd       = "</rdf:Alt>";
 
 static const char * kRDF_ItemStart    = "<rdf:li>";
-static const char * kRDF_ItemEnd      = "</rdf:li>";
+//static const char * kRDF_ItemEnd      = "</rdf:li>";
 
 static const char * kRDF_ValueStart   = "<rdf:value>";
-static const char * kRDF_ValueEnd     = "</rdf:value>";
+//static const char * kRDF_ValueEnd     = "</rdf:value>";
 
 
 // =================================================================================================
@@ -153,7 +154,10 @@ DeclareOneNamespace	( XMP_StringPtr   nsPrefix,
 		for ( ; indent > 0; --indent ) outputStr += indentStr;
 		outputStr += "xmlns:";
 		outputStr += nsPrefix;
-		outputStr[outputStr.size()-1] = '=';	// Change the colon to =.
+		if (outputStr[outputStr.size ( ) - 1] == ':')
+			outputStr[outputStr.size ( ) - 1] = '=';	// Change the colon to =.
+		else
+			outputStr += '=';
 		outputStr += '"';
 		outputStr += nsURI;
 		outputStr += '"';
@@ -294,7 +298,7 @@ AppendNodeValue ( XMP_VarString & outputStr, const XMP_VarString & value, bool f
 	unsigned char * runStart = (unsigned char *) value.c_str();
 	unsigned char * runLimit  = runStart + value.size();
 	unsigned char * runEnd;
-	unsigned char   ch;
+	unsigned char   ch = 0;
 	
 	while ( runStart < runLimit ) {
 	
@@ -575,14 +579,14 @@ SerializeCanonicalRDFProperty ( const XMP_Node * propNode,
 			// This is an array.
 			outputStr += '>';
 			outputStr += newline;
-			EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, propNode->children.size(), kIsStartTag );
+			EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, static_cast<XMP_Index>(propNode->children.size()), kIsStartTag );
 			if ( XMP_ArrayIsAltText(propNode->options) ) NormalizeLangArray ( (XMP_Node*)propNode );
 			for ( size_t childNum = 0, childLim = propNode->children.size(); childNum < childLim; ++childNum ) {
 				const XMP_Node * currChild = propNode->children[childNum];
 				SerializeCanonicalRDFProperty ( currChild, outputStr, newline, indentStr, indent+2,
 												useCanonicalRDF, kEmitAsNormalValue );
 			}
-			EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, propNode->children.size(), kIsEndTag );
+			EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, static_cast<XMP_Index>(propNode->children.size()), kIsEndTag );
 		
 		
 		} else if ( ! hasRDFResourceQual ) {
@@ -908,12 +912,12 @@ SerializeCompactRDFElemProps ( const XMP_Node *	parentNode,
 				
 				outputStr += '>';
 				outputStr += newline;
-				EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, propNode->children.size(), kIsStartTag );
+				EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, static_cast<XMP_Index>(propNode->children.size()), kIsStartTag );
 			
 				if ( XMP_ArrayIsAltText(propNode->options) ) NormalizeLangArray ( (XMP_Node*)propNode );
 				SerializeCompactRDFElemProps ( propNode, outputStr, newline, indentStr, indent+2 );
 
-				EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, propNode->children.size(), kIsEndTag );
+				EmitRDFArrayTag ( propForm, outputStr, newline, indentStr, indent+1, static_cast<XMP_Index>(propNode->children.size()), kIsEndTag );
 
 			} else {
 
@@ -1260,7 +1264,7 @@ XMPMeta::SerializeToBuffer ( XMP_VarString * rdfString,
 		padding = 0;
 	} else {
 		if ( padding == 0 ) {
-			padding = kDefaultPad * unicodeUnitSize;
+			padding = static_cast<XMP_StringLen>(kDefaultPad * unicodeUnitSize);
 		} else if ( (padding >> 28) != 0 ) {
 			XMP_Throw ( "Outrageously large padding size", kXMPErr_BadOptions );	// Bigger than 256 MB.
 		}
@@ -1344,11 +1348,9 @@ XMPMeta::SerializeToBuffer ( XMP_VarString * rdfString,
 		} else {
 
 			std::string padStr ( "    " );  padStr[0] = padStr[1] = padStr[2] = 0;	// Assume big endian.
-			UTF8_to_UTF32_Proc Converter = UTF8_to_UTF32BE;
 
 			if ( charEncoding & _XMP_LittleEndian_Bit ) {
 				padStr[0] = ' '; padStr[1] = padStr[2] = padStr[3] = 0;
-				Converter = UTF8_to_UTF32LE;
 			}
 			
 			utf8Str.swap ( *rdfString );

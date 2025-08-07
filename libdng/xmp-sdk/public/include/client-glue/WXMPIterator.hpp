@@ -2,11 +2,11 @@
 #define __WXMPIterator_hpp__ 1
 
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "client-glue/WXMP_Common.hpp"
@@ -38,12 +38,6 @@ XMP_PUBLIC WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
                           XMP_StringPtr  propName,
                           XMP_OptionBits options,
                           WXMP_Result *  wResult );
-
-extern void
-XMP_PUBLIC WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
-                           XMP_StringPtr  propName,
-                           XMP_OptionBits options,
-                           WXMP_Result *  wResult );
 
 extern void
 XMP_PUBLIC WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef iterRef );

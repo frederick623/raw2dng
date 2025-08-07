@@ -2,12 +2,12 @@
 #define __WXMPFiles_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2002 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "client-glue/WXMP_Common.hpp"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 // =================================================================================================
-/// \file WXMPFiles.h
+/// \file WXMPFiles.hpp
 /// \brief High level support to access metadata in files of interest to Adobe applications.
 ///
 /// This header ...
@@ -36,7 +36,7 @@ extern "C" {
     PropagateException ( wResult );             \
     XMPFilesRef result = XMPFilesRef(wResult.ptrResult)
 
-static XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context,
+inline XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context,
 								 float elapsedTime, float fractionDone, float secondsToGo )
 {
 	bool ok;
@@ -50,7 +50,7 @@ static XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context
 
 // =================================================================================================
 
-static XMP_Bool WrapFilesErrorNotify ( XMPFiles_ErrorCallbackProc proc, void * context,
+inline XMP_Bool WrapFilesErrorNotify ( XMPFiles_ErrorCallbackProc proc, void * context,
 	XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
 {
 	bool ok;

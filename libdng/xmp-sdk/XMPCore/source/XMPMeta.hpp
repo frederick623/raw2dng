@@ -2,11 +2,11 @@
 #define __XMPMeta_hpp__
 
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"
@@ -48,9 +48,6 @@ public:
 	
 	static XMP_OptionBits
 	GetGlobalOptions();
-	
-	static void
-	SetGlobalOptions ( XMP_OptionBits options );
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -75,20 +72,17 @@ public:
 	GetNamespaceURI ( XMP_StringPtr	  namespacePrefix,
 					  XMP_StringPtr * namespaceURI,
 					  XMP_StringLen * uriSize );
-	
-	static void
-	DeleteNamespace ( XMP_StringPtr namespaceURI );
 
 	// ---------------------------------------------------------------------------------------------
 	
-	bool
+	virtual bool
 	GetProperty ( XMP_StringPtr	   schemaNS,
 				  XMP_StringPtr	   propName,
 				  XMP_StringPtr *  propValue,
 				  XMP_StringLen *  valueSize,
 				  XMP_OptionBits * options ) const;
 	
-	bool
+	virtual bool
 	GetArrayItem ( XMP_StringPtr	schemaNS,
 				   XMP_StringPtr	arrayName,
 				   XMP_Index		itemIndex,
@@ -96,7 +90,7 @@ public:
 				   XMP_StringLen *	valueSize,
 				   XMP_OptionBits * options ) const;
 	
-	bool
+	virtual bool
 	GetStructField ( XMP_StringPtr	  schemaNS,
 					 XMP_StringPtr	  structName,
 					 XMP_StringPtr	  fieldNS,
@@ -105,7 +99,7 @@ public:
 					 XMP_StringLen *  valueSize,
 					 XMP_OptionBits * options ) const;
 	
-	bool
+	virtual bool
 	GetQualifier ( XMP_StringPtr	schemaNS,
 				   XMP_StringPtr	propName,
 				   XMP_StringPtr	qualNS,
@@ -116,20 +110,20 @@ public:
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	void
+	virtual void
 	SetProperty ( XMP_StringPtr	 schemaNS,
 				  XMP_StringPtr	 propName,
 				  XMP_StringPtr	 propValue,
 				  XMP_OptionBits options );
 	
-	void
+	virtual void
 	SetArrayItem ( XMP_StringPtr  schemaNS,
 				   XMP_StringPtr  arrayName,
 				   XMP_Index	  itemIndex,
 				   XMP_StringPtr  itemValue,
 				   XMP_OptionBits options );
 	
-	void
+	virtual void
 	AppendArrayItem ( XMP_StringPtr	 schemaNS,
 					  XMP_StringPtr	 arrayName,
 					  XMP_OptionBits arrayOptions,
@@ -144,7 +138,7 @@ public:
 					 XMP_StringPtr	fieldValue,
 					 XMP_OptionBits options );
 	
-	void
+	virtual void
 	SetQualifier ( XMP_StringPtr  schemaNS,
 				   XMP_StringPtr  propName,
 				   XMP_StringPtr  qualNS,
@@ -154,22 +148,22 @@ public:
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	void
+	virtual void
 	DeleteProperty ( XMP_StringPtr schemaNS,
 					 XMP_StringPtr propName );
 	
-	void
+	virtual void
 	DeleteArrayItem ( XMP_StringPtr schemaNS,
 					  XMP_StringPtr arrayName,
 					  XMP_Index		itemIndex );
 	
-	void
+	virtual void
 	DeleteStructField ( XMP_StringPtr schemaNS,
 						XMP_StringPtr structName,
 						XMP_StringPtr fieldNS,
 						XMP_StringPtr fieldName );
 	
-	void
+	virtual void
 	DeleteQualifier ( XMP_StringPtr schemaNS,
 					  XMP_StringPtr propName,
 					  XMP_StringPtr qualNS,
@@ -177,7 +171,7 @@ public:
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	bool
+	virtual bool
 	DoesPropertyExist ( XMP_StringPtr schemaNS,
 						XMP_StringPtr propName ) const;
 	
@@ -200,7 +194,7 @@ public:
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	bool
+	virtual bool
 	GetLocalizedText ( XMP_StringPtr	schemaNS,
 					   XMP_StringPtr	altTextName,
 					   XMP_StringPtr	genericLang,
@@ -211,7 +205,7 @@ public:
 					   XMP_StringLen *	valueSize,
 					   XMP_OptionBits * options ) const;
 	
-	void
+	virtual void
 	SetLocalizedText ( XMP_StringPtr  schemaNS,
 					   XMP_StringPtr  altTextName,
 					   XMP_StringPtr  genericLang,
@@ -219,7 +213,7 @@ public:
 					   XMP_StringPtr  itemValue,
 					   XMP_OptionBits options );
 	
-	void
+	virtual void
 	DeleteLocalizedText (	XMP_StringPtr	schemaNS,
 							XMP_StringPtr	altTextName,
 							XMP_StringPtr	genericLang,
@@ -291,44 +285,41 @@ public:
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	void
+	virtual void
 	GetObjectName ( XMP_StringPtr * namePtr,
 					XMP_StringLen * nameLen ) const;
 
-	void
+	virtual void
 	SetObjectName ( XMP_StringPtr name );
 
 	XMP_OptionBits
 	GetObjectOptions() const;
-	
-	void
-	SetObjectOptions ( XMP_OptionBits options );
 
-	void
+	virtual void
 	Sort();
 
-	void
+	virtual void
 	Erase();
 
-	void
+	virtual void
 	Clone ( XMPMeta * clone, XMP_OptionBits options ) const;
 	
-	XMP_Index
+	virtual XMP_Index
 	CountArrayItems ( XMP_StringPtr schemaNS,
 					  XMP_StringPtr arrayName ) const;
 	
-	void
+	virtual void
 	DumpObject ( XMP_TextOutputProc outProc,
 				 void *				refCon ) const;
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	void
+	virtual void
 	ParseFromBuffer ( XMP_StringPtr	 buffer,
 					  XMP_StringLen	 bufferSize,
 					  XMP_OptionBits options );
 	
-	void
+	virtual void
 	SerializeToBuffer ( XMP_VarString * rdfString,
 						XMP_OptionBits	options,
 						XMP_StringLen	padding,
@@ -344,13 +335,13 @@ public:
 							  void *    context,
 							  XMP_Uns32 limit );
 
-	void
+	virtual void
 	SetErrorCallback ( XMPMeta_ErrorCallbackWrapper wrapperProc,
 					   XMPMeta_ErrorCallbackProc    clientProc,
 					   void *    context,
 					   XMP_Uns32 limit );
 
-	void
+	virtual void
 	ResetErrorCallbackLimit ( XMP_Uns32 limit );
 	
 	class ErrorCallbackInfo : public GenericErrorCallback {
@@ -411,10 +402,8 @@ public:
 private:
   
 	// ! These are hidden on purpose:
-	XMPMeta ( const XMPMeta & /* original */ ) : tree(XMP_Node(0,"",0)), clientRefs(0), xmlParser(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	void operator= ( const XMPMeta & /* rhs */ )  
-		{ XMP_Throw ( "Call to hidden operator=", kXMPErr_InternalFailure ); };
+	XMPMeta ( const XMPMeta & /* original */ ) = delete;
+	void operator= ( const XMPMeta & /* rhs */ ) = delete;
 
 	// Special support routines for parsing, here to be able to access the errorCallback.
 	void ProcessXMLTree ( XMP_OptionBits options );
@@ -424,5 +413,22 @@ private:
 };	// class XMPMeta
 
 // =================================================================================================
+
+void
+DumpNodeOptions(XMP_OptionBits	   options,
+				XMP_TextOutputProc outProc,
+				void *			   refCon);
+
+void
+NormalizeDCArrays(XMP_Node * xmpTree);
+
+void
+MoveExplicitAliases(XMP_Node *                   tree,
+					XMP_OptionBits               parseOptions,
+					XMPMeta::ErrorCallbackInfo & errorCallback);
+
+void
+TouchUpDataModel(XMPMeta *                    xmp,
+				 XMPMeta::ErrorCallbackInfo & errorCallback);
 
 #endif	// __XMPMeta_hpp__

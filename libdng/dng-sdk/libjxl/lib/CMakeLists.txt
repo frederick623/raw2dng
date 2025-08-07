@@ -159,9 +159,9 @@ endif()
 # is no distinction on which libraries use which header since it is expected
 # that all developer libraries are available together at build time.
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/jxl
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}")
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/jxl
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Profiler for libjxl
 include(jxl_profiler.cmake)

@@ -2,11 +2,11 @@
 #define __XMPIterator_hpp__
 
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"
@@ -102,13 +102,9 @@ public:
 				  XMP_StringPtr	  propName,
 				  XMP_OptionBits  options );
 
-	XMPIterator	( XMP_StringPtr	 schemaNS,	// Construct a table iterator.
-				  XMP_StringPtr	 propName,
-				  XMP_OptionBits options );
-
 	virtual ~XMPIterator() RELEASE_NO_THROW;
 
-	bool
+	virtual bool
 	Next ( XMP_StringPtr *  schemaNS,
 		   XMP_StringLen *  nsSize,
 		   XMP_StringPtr *  propPath,
@@ -117,7 +113,7 @@ public:
 		   XMP_StringLen *  valueSize,
 		   XMP_OptionBits * propOptions );
 
-	void
+	virtual void
 	Skip ( XMP_OptionBits options );
 
 	// ! Expose so that wrappers and file static functions can see the data.
@@ -130,13 +126,9 @@ public:
 private:
 
 	// ! These are hidden on purpose:
-	XMPIterator() : clientRefs(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	XMPIterator ( const XMPIterator & /* original */ ) : clientRefs(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	void operator= ( const XMPIterator & /* rhs */ )
-		{ XMP_Throw ( "Call to hidden operator=", kXMPErr_InternalFailure ); };
-
+	XMPIterator() = delete;
+	XMPIterator ( const XMPIterator & /* original */ ) = delete;
+	void operator= ( const XMPIterator & /* rhs */ ) = delete;
 };
 
 // =================================================================================================

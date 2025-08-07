@@ -2,15 +2,14 @@
 #define __WXMPUtils_hpp__ 1
 
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "client-glue/WXMP_Common.hpp"
-
 #if __cplusplus
 extern "C" {
 #endif

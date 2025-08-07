@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2005 Adobe Systems Incorporated
+// Copyright 2005 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
@@ -142,11 +142,11 @@ void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /
 		length = 1;
 	}
 	
-	status = XML_Parse ( this->parser, (const char *)buffer, length, last );
+	status = XML_Parse ( this->parser, (const char *)buffer, static_cast< XMP_StringLen >( length ), last );
 	
 	#if BanAllEntityUsage
 		if ( this->isAborted ) {
-			XMP_Error error(kXMPErr_BadXML, "DOCTYPE is not allowed" )
+			XMP_Error error(kXMPErr_BadXML, "DOCTYPE is not allowed" );
 			this->NotifyClient ( kXMPErrSev_Recoverable, error );
 		}
 	#endif
@@ -275,7 +275,12 @@ static void StartNamespaceDeclHandler ( void * userData, XMP_StringPtr prefix, X
 	#endif
 	
 	if ( XMP_LitMatch ( uri, "http://purl.org/dc/1.1/" ) ) uri = "http://purl.org/dc/elements/1.1/";
-	(void) thiz->registeredNamespaces->Define ( uri, prefix, 0, 0 );
+	if (thiz->registeredNamespaces == sRegisteredNamespaces) {
+		(void)XMPMeta::RegisterNamespace(uri, prefix, 0, 0);
+	}
+	else {
+		(void)thiz->registeredNamespaces->Define(uri, prefix, 0, 0);
+	}
 
 }	// StartNamespaceDeclHandler
 
@@ -500,7 +505,7 @@ static void CommentHandler ( void * userData, XMP_StringPtr comment )
 
 #if BanAllEntityUsage
 static void StartDoctypeDeclHandler ( void * userData, XMP_StringPtr doctypeName,
-									  XMP_StringPtr sysid, XMP_StringPtr pubid, int has_internal_subset )
+                                      XMP_StringPtr /*sysid*/, XMP_StringPtr /*pubid*/, int /*has_internal_subset*/ )
 {
 	IgnoreParam(userData);
 
@@ -511,6 +516,8 @@ static void StartDoctypeDeclHandler ( void * userData, XMP_StringPtr doctypeName
 			PrintIndent ( thiz->parseLog, thiz->elemNesting );
 			fprintf ( thiz->parseLog, "DocType: \"%s\"\n", doctypeName );
 		}
+	#else
+		IgnoreParam(doctypeName);
 	#endif
 	
 	thiz->isAborted = true;	// ! Can't throw an exception across the plain C Expat frames.

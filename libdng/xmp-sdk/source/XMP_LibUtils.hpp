@@ -2,11 +2,11 @@
 #define __XMP_LibUtils_hpp__ 1
 
 // =================================================================================================
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright 2009 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first include.
@@ -72,6 +72,8 @@ extern "C" void Terminate_LibUtils();
 	#define XMP_Throw_Verbose(msg,e,id) XMP_Throw(msg, id)
 #endif
 
+#define XMP_Error_Throw(error)	{ AnnounceThrow (error.GetErrMsg()); throw error; }
+
 class GenericErrorCallback {
 public:
 	// Abstract base class for XMPCore and XMPFiles internal error notification support. Needed so
@@ -83,23 +85,65 @@ public:
 	mutable XMP_Uns32			notifications;
 	mutable XMP_ErrorSeverity	topSeverity;
 
-	GenericErrorCallback() : notifications(0), limit(1), topSeverity(kXMPErrSev_Recoverable) {};
+	GenericErrorCallback() : limit(1), notifications(0), topSeverity(kXMPErrSev_Recoverable) {};
 	virtual ~GenericErrorCallback() {};
 
 	void Clear() { this->notifications = 0; this->limit = 1; this->topSeverity = kXMPErrSev_Recoverable; };
 
-	bool CheckLimitAndSeverity (XMP_ErrorSeverity severity ) const;
+	bool CheckLimitAndSeverity (XMP_ErrorSeverity severity ) const
+	{
+
+		if ( this->limit == 0 ) return true;	// Always notify if the limit is zero.
+		if ( severity < this->topSeverity ) return false;	// Don't notify, don't count.
+
+		if ( severity > this->topSeverity ) {
+			this->topSeverity = severity;
+			this->notifications = 0;
+		}
+
+		this->notifications += 1;
+		return (this->notifications <= this->limit);
+
+	}	// GenericErrorCallback::CheckLimitAndSeverity
 
 	// Const so they can be used with const XMPMeta and XMPFiles objects.
-	void NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error, XMP_StringPtr filePath = 0 ) const;
+	void NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error, XMP_StringPtr filePath = 0 ) const
+	{
+
+		bool notifyClient = CanNotify() && !error.IsNotified();
+		bool returnAndRecover (severity == kXMPErrSev_Recoverable);
+
+		if ( notifyClient ) {
+			error.SetNotified();
+			notifyClient = CheckLimitAndSeverity ( severity );
+			if ( notifyClient ) {
+				returnAndRecover &= ClientCallbackWrapper( filePath, severity, error.GetID(), error.GetErrMsg() );
+			}
+		}
+
+		if ( ! returnAndRecover ) XMP_Error_Throw ( error );
+
+	}	// GenericErrorCallback::NotifyClient
 
 	virtual bool CanNotify ( ) const = 0;
 	virtual bool ClientCallbackWrapper ( XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const = 0;
 
 };
 
-#define XMP_Error_Throw(error)	{ AnnounceThrow (error.GetErrMsg()); throw error; }
+// -------------------------------------------------------------------------------------------------
 
+struct ErrorCallbackBox
+{
+	XMPFiles_ErrorCallbackWrapper	wrapperProc;
+	XMPFiles_ErrorCallbackProc	clientProc;
+	void * context;
+	XMP_Uns32 limit;
+
+	ErrorCallbackBox( XMPFiles_ErrorCallbackWrapper	wrapperProcedure,
+	XMPFiles_ErrorCallbackProc	clientProcedure,
+	void * contextPtr,
+	XMP_Uns32 limit32 ): wrapperProc(wrapperProcedure), clientProc(clientProcedure), context(contextPtr), limit(limit32) { }
+};
 
 // -------------------------------------------------------------------------------------------------
 
@@ -133,6 +177,7 @@ public:
 			const char * assert_msg = _NotifyMsg ( XMP_Enforce, (c), __FILE__, __LINE__ );	\
 			XMP_Throw ( assert_msg , kXMPErr_EnforceFailure );								\
 		}
+	#define XMP_Enforce_NoThrow(c)
 // =================================================================================================
 // Thread synchronization locks
 // ============================
@@ -190,22 +235,33 @@ public:
 #elif XMP_MacBuild | XMP_iOSBuild
 
 	#include <pthread.h>
-	#include <libkern/OSAtomic.h>
+
+	// #include <libkern/OSAtomic.h> deprecated header
+	#include <atomic>
 
 	#define HaveAtomicIncrDecr 1
-	typedef int32_t XMP_AtomicCounter;
+	//typedef int32_t XMP_AtomicCounter;  //Changing XMP_AtomicCounter type to std::atomic
+											 // due to deprecation of mac os APIs
 
-	#define XMP_AtomicIncrement(x)	OSAtomicIncrement32 ( &(x) )
-	#define XMP_AtomicDecrement(x)	OSAtomicDecrement32 ( &(x) )
+
+	typedef std::atomic<int32_t> XMP_AtomicCounter;
+
+	//Both these APIs are deprecated.
+
+	//#define XMP_AtomicIncrement(x)	OSAtomicIncrement32Barrier ( &(x) )
+	//#define XMP_AtomicDecrement(x)	OSAtomicDecrement32Barrier ( &(x) )
+
+	#define XMP_AtomicIncrement(x)	std::atomic_fetch_add ( &(x), 1 )
+	#define XMP_AtomicDecrement(x)	std::atomic_fetch_sub ( &(x), 1 )
 
 	typedef pthread_mutex_t XMP_BasicMutex;
 
 	#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce ( err == 0 ); }
+	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
 	#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 	#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
-#elif XMP_UNIXBuild
+#elif XMP_UNIXBuild || XMP_AndroidBuild
 
 	#include <pthread.h>
 
@@ -222,7 +278,7 @@ public:
 	typedef pthread_mutex_t XMP_BasicMutex;
 
 	#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce ( err == 0 ); }
+	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex );  (void)err; XMP_Enforce_NoThrow ( err == 0 ); }
 	#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 	#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
@@ -334,7 +390,7 @@ private:
 	#define XMP_BasicRWLock_ReleaseFromRead(lck)	lck.ReleaseFromRead()
 	#define XMP_BasicRWLock_ReleaseFromWrite(lck)	lck.ReleaseFromWrite()
 	
-	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
+	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 
 		#include <pthread.h>
 
@@ -370,7 +426,7 @@ private:
 	class XMP_HomeGrownLock {
 	public:
 		XMP_HomeGrownLock();
-		~XMP_HomeGrownLock();
+		~XMP_HomeGrownLock() noexcept(false);
 		void AcquireForRead();
 		void AcquireForWrite();
 		void ReleaseFromRead();
@@ -444,13 +500,13 @@ private:
 #define XMP_ENTER_NoLock(Proc)		\
 	AnnounceStaticEntry ( Proc );	\
 	try {							\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_Static(Proc)				\
 	AnnounceStaticEntry ( Proc );			\
 	AcquireLibraryLock ( sLibraryLock );	\
 	try {									\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_ObjRead(XMPClass,Proc)				\
 	AnnounceObjectEntry ( Proc, "reader" );				\
@@ -458,7 +514,7 @@ private:
 	const XMPClass & thiz = *((XMPClass*)xmpObjRef);	\
 	XMP_AutoLock objLock ( &thiz.lock, kXMP_ReadLock );	\
 	try {												\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_ObjWrite(XMPClass,Proc)					\
 	AnnounceObjectEntry ( Proc, "writer" );					\
@@ -466,7 +522,7 @@ private:
 	XMPClass * thiz = (XMPClass*)xmpObjRef;					\
 	XMP_AutoLock objLock ( &thiz->lock, kXMP_WriteLock );	\
 	try {													\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_EXIT			\
 	XMP_CATCH_EXCEPTIONS	\
@@ -483,18 +539,18 @@ private:
 	} catch ( XMP_Error & xmpErr ) {								\
 		wResult->int32Result = xmpErr.GetID(); 						\
 		wResult->ptrResult   = (void*)"XMP";						\
-		wResult->errMessage  = xmpErr.GetErrMsg();					\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage(xmpErr.GetErrMsg());             \
+		if ( wResult->GetErrMessage() == 0 ) wResult->SetErrMessage(""); \
+		AnnounceCatch ( wResult->GetErrMessage() );             \
 	} catch ( std::exception & stdErr ) {							\
 		wResult->int32Result = kXMPErr_StdException; 				\
-		wResult->errMessage  = stdErr.what(); 						\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage(stdErr.what());                  \
+		if ( wResult->GetErrMessage() == 0 ) wResult->SetErrMessage(""); \
+		AnnounceCatch ( wResult->GetErrMessage() );             \
 	} catch ( ... ) {												\
 		wResult->int32Result = kXMPErr_UnknownException; 			\
-		wResult->errMessage  = "Caught unknown exception";			\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage("Caught unknown exception");     \
+		AnnounceCatch ( wResult->GetErrMessage() );                \
 	}
 
 #if XMP_DebugBuild
@@ -503,6 +559,10 @@ private:
 	#define RELEASE_NO_THROW	throw()
 #endif
 
+
+#define NO_EXCEPT_FALSE noexcept(false)
+#define NO_EXCEPT_TRUE noexcept(true)
+
 // =================================================================================================
 // Data structure dumping utilities
 // ================================
@@ -510,7 +570,7 @@ private:
 #define IsHexDigit(ch)		( (('0' <= (ch)) && ((ch) <= '9')) || (('A' <= (ch)) && ((ch) <= 'F')) )
 #define HexDigitValue(ch)	( (((ch) - '0') < 10) ? ((ch) - '0') : ((ch) - 'A' + 10) )
 
-static const char * kTenSpaces = "          ";
+#define kTenSpaces "          "
 #define OutProcPadding(pad)	{ size_t padLen = (pad); 												\
 							  for ( ; padLen >= 10; padLen -= 10 ) OutProcNChars ( kTenSpaces, 10 );	\
 							  for ( ; padLen > 0; padLen -= 1 ) OutProcNChars ( " ", 1 ); }
@@ -535,7 +595,7 @@ static const char * kTenSpaces = "          ";
 #define OutProcHexByte(num)	{ snprintf ( buffer, sizeof(buffer), "%.2X", (unsigned char)(num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
 							  XMP_Status _status = (*outProc) ( refCon, buffer, (XMP_StringLen)strlen(buffer) );  if ( _status != 0 ) return; }
 
-static const char * kIndent = "   ";
+#define kIndent "   "
 #define OutProcIndent(lev)	{ for ( size_t i = 0; i < (lev); ++i ) OutProcNChars ( kIndent, 3 ); }
 
 void DumpClearString ( const XMP_VarString & value, XMP_TextOutputProc outProc, void * refCon );
