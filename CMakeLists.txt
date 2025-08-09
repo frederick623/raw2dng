@@ -2,6 +2,7 @@ PROJECT( raw2dng )
 
 CMAKE_MINIMUM_REQUIRED( VERSION 3.5 )
 
+set(CMAKE_OSX_ARCHITECTURES "arm64")
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 # set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 

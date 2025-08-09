@@ -45,7 +45,7 @@ ADD_EXECUTABLE( raw2dng
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/FujiProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/variousVendorProcessor.cpp )
 
-TARGET_LINK_LIBRARIES( raw2dng dng-sdk dng ${EXIV2_LIBRARY} ${LIBRAW_LIBRARIES} ${ZLIB_LIBRARIES} )
+TARGET_LINK_LIBRARIES( raw2dng PRIVATE dng-sdk dng ${EXIV2_LIBRARY} ${LIBRAW_LIBRARIES} ${ZLIB_LIBRARIES} )
 
 TARGET_COMPILE_OPTIONS( raw2dng PRIVATE -fexceptions -std=c++11 )
 
