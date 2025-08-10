@@ -197,6 +197,9 @@ struct ErrorCallbackBox
 //   robust and being available on pretty much all platforms. It has the disadvantage of requiring
 //   the developer to download, integrate, and build the Boost thread library.
 //
+// * UseStdLock - This choice uses the std shared_mutex mechanism. It has the advantage of being
+//   robust and being available on pretty much all platforms (required C++17 support). 
+//
 // * UsePThreadLock - This choice uses the POSIX pthread rwlock mechanism. It has the advantage of
 //   being robust and being available on any modern UNIX platform, including Mac OS X.
 //
@@ -210,7 +213,7 @@ struct ErrorCallbackBox
 //   Mac OS X). For Windows there is a choice of critical section and condition variable for Vista
 //   and newer; or critical section, event, and semaphore for XP and newer.
 
-#define UseHomeGrownLock 1
+#define UseStdLock 1
 
 // -------------------------------------------------------------------------------------------------
 // A basic exclusive access mutex and atomic increment/decrement operations.
@@ -329,6 +332,22 @@ private:
 
 	#include <boost/thread/shared_mutex.hpp>
 	typedef boost::shared_mutex XMP_BasicRWLock;
+	
+	#define XMP_BasicRWLock_Initialize(lck)			/* Do nothing. */
+	#define XMP_BasicRWLock_Terminate(lck)			/* Do nothing. */
+
+	#define XMP_BasicRWLock_AcquireForRead(lck)		lck.lock_shared()
+	#define XMP_BasicRWLock_AcquireForWrite(lck)	lck.lock()
+
+	#define XMP_BasicRWLock_ReleaseFromRead(lck)	lck.unlock_shared()
+	#define XMP_BasicRWLock_ReleaseFromWrite(lck)	lck.unlock()
+
+#elif UseStdLock
+
+	#include <mutex>
+	#include <shared_mutex>
+	#include <thread>
+	typedef std::shared_mutex XMP_BasicRWLock;
 	
 	#define XMP_BasicRWLock_Initialize(lck)			/* Do nothing. */
 	#define XMP_BasicRWLock_Terminate(lck)			/* Do nothing. */
