@@ -7,7 +7,7 @@
 /third_party/corpora
 
 # hdrvdp source code
-third_party/**
+third_party/*/
 
 # Output plots
 tools/**
