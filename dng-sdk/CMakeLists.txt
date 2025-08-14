@@ -90,6 +90,7 @@ TARGET_INCLUDE_DIRECTORIES( dng-sdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source
 TARGET_COMPILE_DEFINITIONS( dng-sdk PUBLIC
                             -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
                             -DqDNGThreadSafe=1                 # we're thread-safe - will use pthreads
+                            -DkLocalUseThreads=1 
 #                           -DqDNG64Bit=1                      # set manually to support 64bit platforms (todo: add test)
                             -DqDNGDebug=1                      # do not compile debug code
                             -DqDNGValidateTarget=0             # do not build dng_validate-binary

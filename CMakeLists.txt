@@ -27,7 +27,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
 
 ADD_COMPILE_OPTIONS( -Wall )
 
-ADD_SUBDIRECTORY( libdng )
+ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( raw2dng )
 
 # add_library(RawConverter STATIC
