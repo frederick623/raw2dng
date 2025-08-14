@@ -3,9 +3,23 @@ CMAKE_MINIMUM_REQUIRED( VERSION 4.0 )
 
 PROJECT( raw2dng )
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 # set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
+
+ADD_SUBDIRECTORY(md5)
+ADD_SUBDIRECTORY(xmp-sdk)
+
+execute_process( COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libjxl RESULT_VARIABLE DEPS_RESULT )
+if(NOT DEPS_RESULT EQUAL 0) 
+message(FATAL_ERROR "Failed to run libjxl/deps.sh") 
+endif()
+
+SET(JPEGXL_ENABLE_SJPEG FALSE)
+SET(JPEGXL_ENABLE_TOOLS FALSE)
+SET(BUILD_TESTING FALSE)
+ADD_SUBDIRECTORY(libjxl)
 
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked

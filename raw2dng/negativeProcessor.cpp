@@ -106,7 +106,7 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
             throw std::runtime_error(error.str());
         }
     }
-    else if (!strcmp(rawProcessor->imgdata.idata.model, "ILCE-7"))
+    else if (!strncmp(rawProcessor->imgdata.idata.model, "ILCE-7", 6))
         return new ILCE7processor(host, rawProcessor.Release(), rawImage);
     else if (!strcmp(rawProcessor->imgdata.idata.make, "FUJIFILM"))
         return new FujiProcessor(host, rawProcessor.Release(), rawImage);

@@ -26,14 +26,10 @@
 #include "dng_area_task.h"
 #include "dng_rect.h"
 
-#ifndef kLocalUseThreads
-#define kLocalUseThreads 1
-#endif
-
 #if !kLocalUseThreads
 
-void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area) { 
-   dng_area_task::Perform(task, area, &Allocator (), Sniffer ());
+void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress) { 
+   dng_area_task::Perform(task, area, &Allocator (), Sniffer (), progress);
 }
 
 #else 

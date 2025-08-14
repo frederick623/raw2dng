@@ -10,16 +10,6 @@ FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
-execute_process( COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libjxl RESULT_VARIABLE DEPS_RESULT )
-if(NOT DEPS_RESULT EQUAL 0) 
-message(FATAL_ERROR "Failed to run libjxl/deps.sh") 
-endif()
-
-SET(JPEGXL_ENABLE_SJPEG FALSE)
-SET(JPEGXL_ENABLE_TOOLS FALSE)
-SET(BUILD_TESTING FALSE)
-ADD_SUBDIRECTORY(libjxl)
-
 # =======================================================
 # DNG SDK source code
 
@@ -96,14 +86,12 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_xy_coord.cpp )
 
 TARGET_INCLUDE_DIRECTORIES( dng-sdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
-TARGET_INCLUDE_DIRECTORIES(dng-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib/include)
-TARGET_LINK_DIRECTORIES(dng-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libjxl/lib)
 
 TARGET_COMPILE_DEFINITIONS( dng-sdk PUBLIC
                             -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
                             -DqDNGThreadSafe=1                 # we're thread-safe - will use pthreads
 #                           -DqDNG64Bit=1                      # set manually to support 64bit platforms (todo: add test)
-                            -DqDNGDebug=0                      # do not compile debug code
+                            -DqDNGDebug=1                      # do not compile debug code
                             -DqDNGValidateTarget=0             # do not build dng_validate-binary
                             -DqDNGUseLibJPEG=1                 # use libjpeg
                             -DqDNGXMPFiles=0 -DqDNGXMPDocOps=0 # build minimal XMP-set
