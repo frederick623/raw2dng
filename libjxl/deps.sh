@@ -71,3 +71,5 @@ main() {
 }
 
 main "$@"
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+sed -i '' -e 's~cmake_minimum_required(.*)~cmake_minimum_required(VERSION 3.10.1)~g' $(grep -rl cmake_minimum_required ${DIR}/third_party)
