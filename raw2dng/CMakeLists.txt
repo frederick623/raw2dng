@@ -32,12 +32,7 @@ FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
-INCLUDE_DIRECTORIES( ${raw2dng_SOURCE_DIR}/libdng 
-                     ${raw2dng_SOURCE_DIR}/libdng/dng-sdk/source 
-                     ${CMAKE_CURRENT_BINARY_DIR} )
-
-ADD_EXECUTABLE( raw2dng
-                ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng.cpp
+ADD_LIBRARY( raw2dng_lib STATIC
                 ${CMAKE_CURRENT_SOURCE_DIR}/dnghost.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/negativeProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/rawConverter.cpp
@@ -46,8 +41,11 @@ ADD_EXECUTABLE( raw2dng
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/FujiProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/variousVendorProcessor.cpp )
 
-TARGET_LINK_LIBRARIES( raw2dng PRIVATE dng-sdk ${EXIV2_LIBRARY} ${LIBRAW_LIBRARIES} ${ZLIB_LIBRARIES} )
+TARGET_INCLUDE_DIRECTORIES( raw2dng_lib PUBLIC
+                    ${CMAKE_CURRENT_SOURCE_DIR} 
+                    )
 
-TARGET_COMPILE_OPTIONS( raw2dng PRIVATE -fexceptions -std=c++11 )
+TARGET_LINK_LIBRARIES( raw2dng_lib PUBLIC dng-sdk ${EXIV2_LIBRARY} ${LIBRAW_LIBRARIES} ${ZLIB_LIBRARIES} )
 
-INSTALL(TARGETS raw2dng DESTINATION bin)
+TARGET_COMPILE_OPTIONS( raw2dng_lib PRIVATE -fexceptions -std=c++11 )
+

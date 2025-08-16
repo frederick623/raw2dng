@@ -61,6 +61,8 @@ build/
 raw2dng/config.h
 raw2dng/raw2dng
 
-downloads/
+libjxl/downloads/*/
 libjxl/third_party/*/
 LICENSE*
+
+bin/

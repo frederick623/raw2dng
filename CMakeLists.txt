@@ -1,5 +1,5 @@
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.5.1 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.10.1 )
 
 PROJECT( raw2dng )
 set(CMAKE_CXX_STANDARD 17)
@@ -19,6 +19,15 @@ ADD_COMPILE_OPTIONS( -Wall )
 
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( raw2dng )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+
+add_executable(raw2dng
+    ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng/raw2dng.cpp
+)
+
+# Link against the library the child built
+target_link_libraries(raw2dng PRIVATE raw2dng_lib)
 
 # add_library(RawConverter STATIC
 #     rawConverterC.cpp  

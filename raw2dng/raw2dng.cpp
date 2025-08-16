@@ -29,7 +29,7 @@ void publishProgressUpdate(const char *message) {std::cout << " - " << message <
 void registerPublisher(std::function<void(const char*)> function) {RawConverter::registerPublisher(function);}
 
 
-void raw2dng(std::string rawFilename, std::string outFilename, std::string dcpFilename, bool embedOriginal) {
+void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename, bool embedOriginal) {
     RawConverter converter;
     converter.openRawFile(rawFilename);
     converter.buildNegative(dcpFilename);
@@ -40,7 +40,7 @@ void raw2dng(std::string rawFilename, std::string outFilename, std::string dcpFi
 }
 
 
-void raw2tiff(std::string rawFilename, std::string outFilename, std::string dcpFilename) {
+void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename) {
     RawConverter converter;
     converter.openRawFile(rawFilename);
     converter.buildNegative(dcpFilename);
@@ -50,7 +50,7 @@ void raw2tiff(std::string rawFilename, std::string outFilename, std::string dcpF
 }
 
 
-void raw2jpeg(std::string rawFilename, std::string outFilename, std::string dcpFilename) {
+void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename) {
     RawConverter converter;
     converter.openRawFile(rawFilename);
     converter.buildNegative(dcpFilename);
