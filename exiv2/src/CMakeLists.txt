@@ -178,16 +178,16 @@ target_include_directories(exiv2lib SYSTEM PRIVATE
 )
 
 if (EXIV2_ENABLE_XMP OR EXIV2_ENABLE_EXTERNAL_XMP)
+    FIND_PACKAGE(EXPAT)
     target_include_directories(exiv2lib PRIVATE ${EXPAT_INCLUDE_DIR})
-    target_link_libraries(exiv2lib PRIVATE EXPAT::EXPAT)
+    target_link_libraries(exiv2lib PRIVATE ${EXPAT_LIBRARIES})
     list(APPEND requires_private_list "expat")
 endif()
 
 if (EXIV2_ENABLE_XMP)
-    target_sources(exiv2lib PRIVATE $<TARGET_OBJECTS:exiv2-xmp>)
+    target_sources(exiv2lib PRIVATE $<TARGET_OBJECTS:xmp-sdk>)
 elseif(EXIV2_ENABLE_EXTERNAL_XMP)
-    target_link_libraries(exiv2lib PUBLIC ${XMPSDK_LIBRARY})
-    target_include_directories(exiv2lib PUBLIC ${XMPSDK_INCLUDE_DIR})
+    target_link_libraries(exiv2lib PUBLIC xmp-sdk)
     target_compile_definitions(exiv2lib PUBLIC EXV_ADOBE_XMPSDK=2016)
 endif()
 
@@ -282,29 +282,30 @@ set(requires_private_for_pc_file "${requires_private_string}" PARENT_SCOPE)
 
 write_basic_package_version_file(exiv2ConfigVersion.cmake COMPATIBILITY ExactVersion)
 
-install(TARGETS exiv2lib EXPORT exiv2Targets)
+# install(TARGETS exiv2lib xmp-sdk EXPORT exiv2Targets)
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-  ../cmake/exiv2Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/exiv2Config.cmake
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2"
-)
+# include(CMakePackageConfigHelpers)
+# configure_package_config_file(
+#   ../cmake/exiv2Config.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/exiv2Config.cmake
+#   INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2"
+# )
 
-install(FILES
-    ${PUBLIC_HEADERS}
-    ${CMAKE_BINARY_DIR}/exv_conf.h
-    ${CMAKE_BINARY_DIR}/exiv2lib_export.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/exiv2)
+# install(FILES
+#     ${PUBLIC_HEADERS}
+#     ${CMAKE_BINARY_DIR}/exv_conf.h
+#     ${CMAKE_BINARY_DIR}/exiv2lib_export.h
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/exiv2)
 
-install(EXPORT exiv2Targets
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2"
-    NAMESPACE Exiv2::
-)
+    
+# install(EXPORT exiv2Targets
+#     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2"
+#     NAMESPACE Exiv2::
+# )
 
-install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/exiv2ConfigVersion.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/exiv2Config.cmake
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2")
+# install(
+#     FILES
+#         ${CMAKE_CURRENT_BINARY_DIR}/exiv2ConfigVersion.cmake
+#         ${CMAKE_CURRENT_BINARY_DIR}/exiv2Config.cmake
+#     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/exiv2")
 

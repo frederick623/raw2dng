@@ -33,12 +33,12 @@ ADD_LIBRARY( xmp-sdk OBJECT
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils-FileInfo.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils.cpp )
 
-TARGET_INCLUDE_DIRECTORIES( xmp-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/public/include 
-                                    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
                             -DMAC_ENV=1             # Windows is -DWIN_ENV=1
 #                           -XMP_64=1                # manually set 64-bit
                           )
 TARGET_COMPILE_OPTIONS( xmp-sdk PRIVATE -w )
 
-TARGET_LINK_LIBRARIES( xmp-sdk PRIVATE md5 ${EXPAT_LIBRARIES} )
+TARGET_INCLUDE_DIRECTORIES( xmp-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/public/include 
+                                    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+TARGET_LINK_LIBRARIES( xmp-sdk PUBLIC md5 ${EXPAT_LIBRARIES} )

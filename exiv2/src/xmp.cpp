@@ -635,7 +635,7 @@ void XmpParser::registerNs(const std::string& ns, const std::string& prefix) {
   try {
     initialize();
     AutoLock autoLock(xmpLockFct_, pLockData_);
-    SXMPMeta::DeleteNamespace(ns.c_str());
+    // SXMPMeta::DeleteNamespace(ns.c_str());
 #ifdef EXV_ADOBE_XMPSDK
     SXMPMeta::RegisterNamespace(ns.c_str(), prefix.c_str(), nullptr);
 #else
