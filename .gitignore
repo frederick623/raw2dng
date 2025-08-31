@@ -11,6 +11,8 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+CPackConfig.cmake
+CPackSourceConfig.cmake
 
 .DS_Store
 

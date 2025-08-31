@@ -12,6 +12,16 @@ ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
 ADD_SUBDIRECTORY(libjxl)
 
+include(FetchContent)
+FetchContent_Declare(
+    expat
+    GIT_REPOSITORY https://github.com/libexpat/libexpat/
+    GIT_TAG        f9a3eeb  
+    SOURCE_SUBDIR  expat/
+)
+
+FetchContent_MakeAvailable(expat)
+
 set(BUILD_SHARED_LIBS FALSE)
 set(EXIV2_ENABLE_EXTERNAL_XMP TRUE)
 set(EXIV2_ENABLE_INIH FALSE)

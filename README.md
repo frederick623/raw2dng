@@ -8,5 +8,4 @@ Current repo fixed the build issue and add latest Adobe DNG SDK.
 **Compile:** `cmake`, `make`, `make install`
 
 **Dependencies:**
- - libraw (tested with 0.17.1)
- - libexpat
+ - libraw (tested with 0.21.4)

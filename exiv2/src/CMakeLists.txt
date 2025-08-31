@@ -178,9 +178,8 @@ target_include_directories(exiv2lib SYSTEM PRIVATE
 )
 
 if (EXIV2_ENABLE_XMP OR EXIV2_ENABLE_EXTERNAL_XMP)
-    FIND_PACKAGE(EXPAT)
-    target_include_directories(exiv2lib PRIVATE ${EXPAT_INCLUDE_DIR})
-    target_link_libraries(exiv2lib PRIVATE ${EXPAT_LIBRARIES})
+    target_include_directories(exiv2lib PRIVATE expat)
+    target_link_libraries(exiv2lib PRIVATE expat)
     list(APPEND requires_private_list "expat")
 endif()
 
