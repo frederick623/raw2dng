@@ -31,7 +31,7 @@ public:
    void buildDNGImage();
 
 protected:
-   FujiProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr &rawImage);
+   FujiProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage);
 
    bool m_fujiRotate90;
 };

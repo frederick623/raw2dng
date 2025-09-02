@@ -67,7 +67,7 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
     // -----------------------------------------------------------------------------------------
     // Open and parse rawfile with libraw...
 
-    AutoPtr<LibRaw> rawProcessor(new LibRaw());
+    LibRaw* rawProcessor(new LibRaw());
 
     int ret = rawProcessor->open_file(filename);
     if (ret != LIBRAW_SUCCESS) {
@@ -100,22 +100,22 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
     // Identify and create correct processor class
 
     if (rawProcessor->imgdata.idata.dng_version != 0) {
-        try {return new DNGprocessor(host, rawProcessor.Release(), rawImage);}
+        try {return new DNGprocessor(host, rawProcessor, std::move(rawImage));}
         catch (dng_exception &e) {
             std::stringstream error; error << "Cannot parse source DNG-file (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
             throw std::runtime_error(error.str());
         }
     }
     else if (!strncmp(rawProcessor->imgdata.idata.model, "ILCE-7", 6))
-        return new ILCE7processor(host, rawProcessor.Release(), rawImage);
+        return new ILCE7processor(host, rawProcessor, std::move(rawImage));
     else if (!strcmp(rawProcessor->imgdata.idata.make, "FUJIFILM"))
-        return new FujiProcessor(host, rawProcessor.Release(), rawImage);
+        return new FujiProcessor(host, rawProcessor, std::move(rawImage));
 
-    return new VariousVendorProcessor(host, rawProcessor.Release(), rawImage);
+    return new VariousVendorProcessor(host, rawProcessor, std::move(rawImage));
 }
 
 
-NegativeProcessor::NegativeProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr &rawImage)
+NegativeProcessor::NegativeProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
                                    : m_RawProcessor(rawProcessor), m_RawImage(std::move(rawImage)),
                                      m_RawExif(m_RawImage->exifData()), m_RawXmp(m_RawImage->xmpData()),
                                      m_host(host) {
