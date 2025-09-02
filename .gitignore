@@ -63,6 +63,7 @@ build/
 *.dwo
 raw2dng/config.h
 raw2dng/raw2dng
+libraw/LibRaw
 
 libjxl/downloads/*
 libjxl/third_party/*/
@@ -72,3 +73,4 @@ bin/
 
 *.ARW
 *.DNG
+

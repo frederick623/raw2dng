@@ -12,20 +12,6 @@ SET(RAW2DNG_VERSION_PATCH 3)
 CONFIGURE_FILE ( "${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake"
                  "${CMAKE_CURRENT_BINARY_DIR}/config.h" )
 
-SET( LIBRAW_MIN_VERSION "0.17" )
-FIND_PACKAGE( LibRaw )
-INCLUDE_DIRECTORIES( ${LIBRAW_INCLUDE_DIR} )
-ADD_DEFINITIONS(${LIBRAW_DEFINITIONS})
-
-if (NOT LibRaw_FOUND)
-    message("LibRaw not found!")
-
-    find_package(PkgConfig REQUIRED)
-
-    pkg_check_modules(LIBNAME REQUIRED LibRaw)
-
-endif()
-
 FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
@@ -43,7 +29,7 @@ TARGET_INCLUDE_DIRECTORIES( raw2dng_lib PUBLIC
                     ${CMAKE_CURRENT_SOURCE_DIR} 
                     )
 
-TARGET_LINK_LIBRARIES( raw2dng_lib PUBLIC xmp-sdk dng-sdk exiv2lib ${LIBRAW_LIBRARIES} ${ZLIB_LIBRARIES} )
+TARGET_LINK_LIBRARIES( raw2dng_lib PUBLIC xmp-sdk dng-sdk exiv2lib raw ${ZLIB_LIBRARIES} )
 
 TARGET_COMPILE_OPTIONS( raw2dng_lib PRIVATE -fexceptions -std=c++11 )
 

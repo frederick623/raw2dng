@@ -3,16 +3,29 @@ CMAKE_MINIMUM_REQUIRED( VERSION 3.10.1 )
 
 PROJECT( raw2dng )
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_OSX_ARCHITECTURES "arm64")
+set(BUILD_SHARED_LIBS FALSE)
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 # set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
+
 
 ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
 ADD_SUBDIRECTORY(libjxl)
 
 include(FetchContent)
+FetchContent_Declare(
+    LibRaw
+    GIT_REPOSITORY https://github.com/LibRaw/LibRaw/
+    GIT_TAG        9646d77  
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/libraw/LibRaw
+)
+
+FetchContent_MakeAvailable(LibRaw)
+
+ADD_SUBDIRECTORY(libraw)
+
 FetchContent_Declare(
     expat
     GIT_REPOSITORY https://github.com/libexpat/libexpat/
@@ -22,7 +35,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expat)
 
-set(BUILD_SHARED_LIBS FALSE)
 set(EXIV2_ENABLE_EXTERNAL_XMP TRUE)
 set(EXIV2_ENABLE_INIH FALSE)
 set(EXIV2_ENABLE_VIDEO FALSE)
