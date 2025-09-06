@@ -19,7 +19,7 @@
 /* #undef EXV_ENABLE_VIDEO */
 
 // Define if you want BMFF support.
-/* #undef EXV_ENABLE_BMFF */
+#define EXV_ENABLE_BMFF
 
 // Define if you want to use the inih library.
 /* #undef EXV_ENABLE_INIH */
