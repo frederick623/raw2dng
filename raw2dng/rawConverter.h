@@ -20,7 +20,6 @@
 
 #include "negativeProcessor.h"
 
-#include <functional>
 #include <string>
 
 #include "dng_auto_ptr.h"
@@ -35,17 +34,15 @@ public:
    RawConverter();
    virtual ~RawConverter();
 
-   void openRawFile(const std::string rawFilename);
-   void buildNegative(const std::string dcpFilename);
-   void embedRaw(const std::string rawFilename);
+   void openRawFile(const std::string& rawFilename);
+   void buildNegative(const std::string& dcpFilename);
+   void embedRaw(const std::string& rawFilename);
    void renderImage();
    void renderPreviews();
 
-   void writeDng (const std::string outFilename);
-   void writeTiff(const std::string outFilename);
-   void writeJpeg(const std::string outFilename);
-
-   static void registerPublisher(std::function<void(const char*)> function);
+   void writeDng (const std::string& outFilename);
+   void writeTiff(const std::string& outFilename);
+   void writeJpeg(const std::string& outFilename);
 
 private:
    AutoPtr<dng_host> m_host;
@@ -55,5 +52,4 @@ private:
    dng_string m_appName, m_appVersion;
    dng_date_time_info m_dateTimeNow;
 
-   static std::function<void(const char*)> m_publishFunction;
 };

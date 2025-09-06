@@ -9,6 +9,12 @@ set(BUILD_SHARED_LIBS FALSE)
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 # set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 
+set(EXIV2_ENABLE_EXTERNAL_XMP TRUE)
+set(EXIV2_ENABLE_INIH FALSE)
+set(EXIV2_ENABLE_VIDEO FALSE)
+set(EXIV2_BUILD_EXIV2_COMMAND FALSE)
+set(EXIV2_ENABLE_DYNAMIC_RUNTIME FALSE)
+set(EXIV2_ENABLE_BROTLI FALSE)
 
 ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
@@ -35,12 +41,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expat)
 
-set(EXIV2_ENABLE_EXTERNAL_XMP TRUE)
-set(EXIV2_ENABLE_INIH FALSE)
-set(EXIV2_ENABLE_VIDEO FALSE)
-set(EXIV2_BUILD_EXIV2_COMMAND FALSE)
-set(EXIV2_ENABLE_DYNAMIC_RUNTIME FALSE)
-set(EXIV2_ENABLE_BROTLI FALSE)
 ADD_SUBDIRECTORY(exiv2)
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
@@ -53,21 +53,20 @@ ADD_SUBDIRECTORY( raw2dng )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-add_executable(raw2dng
+add_executable(rawConverter
     ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng/raw2dng.cpp
 )
 
 # Link against the library the child built
-target_link_libraries(raw2dng PRIVATE raw2dng_lib)
+target_link_libraries(rawConverter PRIVATE raw2dng)
 
-# add_library(RawConverter STATIC
-#     rawConverterC.cpp  
-#     raw2dng/raw2dng.cpp 
-# )
+add_library(RawConverterC STATIC
+    rawConverterC.cpp
+)
 
-# target_include_directories(RawConverter PUBLIC
-#     ${CMAKE_CURRENT_SOURCE_DIR}
-# )
+target_link_libraries(RawConverterC PUBLIC
+    raw2dng
+)
 
 # set(CMAKE_OSX_ARCHITECTURES "arm64")
 

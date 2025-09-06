@@ -39,11 +39,10 @@
 #include "negativeProcessor.h"
 #include "dnghost.h"
 
+#include "util.hpp"
 
-std::function<void(const char*)> RawConverter::m_publishFunction = NULL;
 
-
-dng_file_stream* openFileStream(const std::string &outFilename) {
+dng_file_stream* openFileStream(const std::string& outFilename) {
     try {return new dng_file_stream(outFilename.c_str(), true);}
     catch (dng_exception& e) {
         std::stringstream error; error << "Error opening output file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -74,26 +73,19 @@ RawConverter::~RawConverter() {
 }
 
 
-void RawConverter::registerPublisher(std::function<void(const char*)> publisher) {
-    m_publishFunction = publisher;
-}
-
-
-void RawConverter::openRawFile(const std::string rawFilename) {
+void RawConverter::openRawFile(const std::string& rawFilename) {
     // -----------------------------------------------------------------------------------------
     // Create processor and parse raw files
 
-    if (m_publishFunction != NULL) m_publishFunction("parsing raw file");
 
     m_negProcessor.Reset(NegativeProcessor::createProcessor(m_host, rawFilename.c_str()));
 }
 
 
-void RawConverter::buildNegative(const std::string dcpFilename) {
+void RawConverter::buildNegative(const std::string& dcpFilename) {
     // -----------------------------------------------------------------------------------------
     // Set all metadata and properties
 
-    if (m_publishFunction != NULL) m_publishFunction("processing metadata");
 
     m_negProcessor->setDNGPropertiesFromRaw();
     m_negProcessor->setCameraProfile(dcpFilename.c_str());
@@ -109,14 +101,12 @@ void RawConverter::buildNegative(const std::string dcpFilename) {
     // -----------------------------------------------------------------------------------------
     // Copy raw sensor data
 
-    if (m_publishFunction != NULL) m_publishFunction("reading raw image data");
 
     m_negProcessor->buildDNGImage();
 }
 
 
-void RawConverter::embedRaw(const std::string rawFilename) {
-    if (m_publishFunction != NULL) m_publishFunction("embedding raw file");
+void RawConverter::embedRaw(const std::string& rawFilename) {
     m_negProcessor->embedOriginalRaw(rawFilename.c_str());
 }
 
@@ -126,11 +116,9 @@ void RawConverter::renderImage() {
     // Render image
 
     try {
-        if (m_publishFunction != NULL) m_publishFunction("building preview - linearising");
 
         m_negProcessor->getNegative()->BuildStage2Image(*m_host);   // Compute linearized and range-mapped image
 
-        if (m_publishFunction != NULL) m_publishFunction("building preview - demosaicing");
 
         m_negProcessor->getNegative()->BuildStage3Image(*m_host);   // Compute demosaiced image (used by preview and thumbnail)
     }
@@ -148,7 +136,6 @@ void RawConverter::renderPreviews() {
     m_previewList.Reset(new dng_preview_list());
     dng_render negRender(*m_host, *m_negProcessor->getNegative());
 
-    if (m_publishFunction != NULL) m_publishFunction("building preview - rendering JPEG");
 
     dng_jpeg_preview *jpeg_preview = new dng_jpeg_preview();
     jpeg_preview->fInfo.fApplicationName.Set_ASCII(m_appName.Get());
@@ -162,7 +149,6 @@ void RawConverter::renderPreviews() {
     AutoPtr<dng_preview> jp(dynamic_cast<dng_preview*>(jpeg_preview));
     m_previewList->Append(jp);
 
-    if (m_publishFunction != NULL) m_publishFunction("building preview - rendering thumbnail");
 
     dng_image_preview *thumbnail = new dng_image_preview();
     thumbnail->fInfo.fApplicationName    = jpeg_preview->fInfo.fApplicationName;
@@ -177,11 +163,10 @@ void RawConverter::renderPreviews() {
 }
 
 
-void RawConverter::writeDng(const std::string outFilename) {
+void RawConverter::writeDng(const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Write DNG-image to file
 
-    if (m_publishFunction != NULL) m_publishFunction("writing DNG file");
 
     AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
 
@@ -195,11 +180,10 @@ void RawConverter::writeDng(const std::string outFilename) {
 }
 
 
-void RawConverter::writeTiff(const std::string outFilename) {
+void RawConverter::writeTiff(const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Render TIFF
 
-    if (m_publishFunction != NULL) m_publishFunction("rendering TIFF");
 
     dng_render negRender(*m_host, *m_negProcessor->getNegative());
     AutoPtr<dng_image> negImage(negRender.Render());
@@ -209,7 +193,6 @@ void RawConverter::writeTiff(const std::string outFilename) {
 
     AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
 
-    if (m_publishFunction != NULL) m_publishFunction("writing TIFF file");
 
     try {
         dng_image_writer tiffWriter; 
@@ -224,13 +207,12 @@ void RawConverter::writeTiff(const std::string outFilename) {
 }
 
 
-void RawConverter::writeJpeg(const std::string outFilename) {
+void RawConverter::writeJpeg(const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Render JPEG
 
     // FIXME: we should render and integrate a thumbnail too
 
-    if (m_publishFunction != NULL) m_publishFunction("rendering JPEG");
 
     dng_render negRender(*m_host, *m_negProcessor->getNegative());
     AutoPtr<dng_image> negImage(negRender.Render());
@@ -246,7 +228,6 @@ void RawConverter::writeJpeg(const std::string outFilename) {
     // -----------------------------------------------------------------------------------------
     // Write JPEG-image to file
 
-    if (m_publishFunction != NULL) m_publishFunction("writing JPEG file");
 
     AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
 

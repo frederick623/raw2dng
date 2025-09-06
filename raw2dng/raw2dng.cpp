@@ -20,44 +20,6 @@
 #include <iostream>
 
 #include "raw2dng.h"
-#include "rawConverter.h"
-
-
-void publishProgressUpdate(const char *message) {std::cout << " - " << message << "...\n";}
-
-
-void registerPublisher(std::function<void(const char*)> function) {RawConverter::registerPublisher(function);}
-
-
-void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename, bool embedOriginal) {
-    RawConverter converter;
-    converter.openRawFile(rawFilename);
-    converter.buildNegative(dcpFilename);
-    if (embedOriginal) converter.embedRaw(rawFilename);
-    converter.renderImage();
-    converter.renderPreviews();
-    converter.writeDng(outFilename);
-}
-
-
-void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename) {
-    RawConverter converter;
-    converter.openRawFile(rawFilename);
-    converter.buildNegative(dcpFilename);
-    converter.renderImage();
-    converter.renderPreviews();
-    converter.writeTiff(outFilename);
-}
-
-
-void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename) {
-    RawConverter converter;
-    converter.openRawFile(rawFilename);
-    converter.buildNegative(dcpFilename);
-    converter.renderImage();
-    converter.writeJpeg(outFilename);
-}
-
 
 int main(int argc, const char* argv []) {  
     if (argc == 1) {
@@ -110,8 +72,6 @@ int main(int argc, const char* argv []) {
 
     std::cout << "Starting conversion: \"" << rawFilename << "\n";
     std::time_t startTime = std::time(NULL);
-
-    RawConverter::registerPublisher(publishProgressUpdate);
 
     try {
         if (isJpeg)      raw2jpeg(rawFilename, outFilename, dcpFilename);

@@ -58,6 +58,7 @@ build/
 *.exe
 *.out
 *.app
+*.tcl
 
 # debug information files
 *.dwo
