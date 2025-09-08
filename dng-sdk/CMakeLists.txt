@@ -115,4 +115,4 @@ if (APPLE)
 endif()
 
 
-TARGET_LINK_LIBRARIES( dng-sdk PUBLIC xmp-sdk jxl jxl_threads ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )
+TARGET_LINK_LIBRARIES( dng-sdk PUBLIC xmp-sdk jxl jxl_threads jpeg-static ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )

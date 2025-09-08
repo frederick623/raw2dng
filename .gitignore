@@ -60,11 +60,15 @@ build/
 *.app
 *.tcl
 
+EnabledFeatures.txt
+DisabledFeatures.txt
+
 # debug information files
 *.dwo
 raw2dng/config.h
 raw2dng/raw2dng
 libraw/LibRaw
+libjpeg/
 
 libjxl/downloads/*
 libjxl/third_party/*/
