@@ -178,3 +178,5 @@ if (JPEGXL_ENABLE_SJPEG)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sjpeg/COPYING"
                  ${PROJECT_BINARY_DIR}/LICENSE.sjpeg COPYONLY)
 endif ()
+
+add_subdirectory(libjpeg)

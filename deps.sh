@@ -40,8 +40,12 @@ download_github() {
   local url
   local strip_components=0
   if [[ "${project:0:4}" == "http" ]]; then
-    # "project" is a googlesource.com base url.
-    url="${project}${sha}.tar.gz"
+    if [[ "${project:-2:2}" == "gz" ]]; then
+      url="${project}"
+    else
+      # "project" is a googlesource.com base url.
+      url="${project}${sha}.tar.gz"
+    fi
   else
     # GitHub files have a top-level directory
     strip_components=1
@@ -57,6 +61,29 @@ download_github() {
   mv "${local_fn}.tmp" "${local_fn}"
 }
 
+download_gz() {
+  local path=$1
+  local URL="$2"
+  local FILENAME="${MYDIR}/downloads/$(basename $URL)"
+
+  if [ -f "$FILENAME" ]; then
+    echo "File $FILENAME already exists, skipping download."
+    return 0
+  else
+    echo "Downloading $FILENAME from $URL..."
+    curl -L -o "$FILENAME" "$URL"
+    
+    # Check if download was successful
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to download $FILENAME"
+        exit 1
+    fi
+
+    mkdir -p "${MYDIR}/${path}"
+    tar -xzf ${FILENAME} -C $path --strip-components=1
+  fi
+
+}
 
 main() {
   # Sources downloaded from a tarball.
@@ -67,9 +94,12 @@ main() {
     "https://skia.googlesource.com/skcms/+archive/"
   download_github third_party/zlib madler/zlib
   download_github third_party/libpng glennrp/libpng
+  download_gz third_party/libjpeg \
+    "https://github.com/winlibs/libjpeg/archive/refs/tags/libjpeg-turbo-2.1.0.tar.gz"
   echo "Done."
 }
 
 main "$@"
 DIR="$( cd "$( dirname "$0" )" && pwd )"
-sed -i '' -e 's~cmake_minimum_required(.*)~cmake_minimum_required(VERSION 3.10.1)~g' $(grep -rl cmake_minimum_required ${DIR}/third_party)
+sed -i '' -e '/cmake_minimum_required/d' $(find . -name CMakeLists.txt)
+sed -i '' -e '/# INSTALLATION/,$d' third_party/libjpeg/CMakeLists.txt

@@ -1,7 +1,13 @@
 
 CMAKE_MINIMUM_REQUIRED( VERSION 3.10.1 )
 
+execute_process( COMMAND bash deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULT_VARIABLE DEPS_RESULT )
+if(NOT DEPS_RESULT EQUAL 0) 
+    message(FATAL_ERROR "Failed to run deps.sh") 
+endif()
+
 PROJECT( raw2dng )
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_OSX_ARCHITECTURES "arm64")
@@ -15,6 +21,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 ADD_COMPILE_OPTIONS( -Wall )
 
+SET(JPEGXL_ENABLE_SJPEG FALSE)
+SET(JPEGXL_ENABLE_TOOLS FALSE)
+SET(JPEGXL_ENABLE_SKCMS TRUE)
+SET(JPEGXL_ENABLE_VIEWERS FALSE)
+
+SET(BUILD_TESTING FALSE)
+set(HWY_ENABLE_TESTS FALSE)
+ADD_SUBDIRECTORY(third_party)
+set(JPEG_VERSION 80)
+set(JPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg)
+set(JPEG_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg)
+
+ADD_SUBDIRECTORY(libjxl)
+
 include(FetchContent)
 FetchContent_Declare(
     LibRaw
@@ -25,8 +45,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(LibRaw)
 
-ADD_SUBDIRECTORY(libraw)
-
 FetchContent_Declare(
     expat
     GIT_REPOSITORY https://github.com/libexpat/libexpat/
@@ -36,34 +54,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expat)
 
-if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/CMakeLists.txt")
-# Define the external project
-FetchContent_Declare(
-    libjpeg
-    GIT_REPOSITORY https://github.com/winlibs/libjpeg/
-    GIT_TAG        a49f7ac  
-    SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg
-)
-
-FetchContent_MakeAvailable(libjpeg)
-endif()
-
-execute_process(COMMAND sed -i "" -e "/cmake_minimum_required/d" CMakeLists.txt 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg
-)
-
-execute_process(COMMAND sed -i "" -e "/# INSTALLATION/,$d" CMakeLists.txt 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg
-)
-
-ADD_SUBDIRECTORY(libjpeg)
-set(JPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg)
-set(JPEG_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg)
-set(HWY_ENABLE_TESTS FALSE)
-
+ADD_SUBDIRECTORY(libraw)
 ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
-ADD_SUBDIRECTORY(libjxl)
 ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( raw2dng )

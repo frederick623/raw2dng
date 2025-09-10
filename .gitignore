@@ -70,8 +70,9 @@ raw2dng/raw2dng
 libraw/LibRaw
 libjpeg/
 
-libjxl/downloads/*
-libjxl/third_party/*/
+downloads/*
+third_party/*/
+
 LICENSE*
 
 bin/

@@ -22,7 +22,6 @@
 #
 # ============================================================
 
-cmake_minimum_required(VERSION 3.10.1)
 
 set(LIBRAW_PATH "LibRaw")
 

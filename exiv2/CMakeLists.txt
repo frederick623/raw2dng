@@ -1,5 +1,4 @@
 # Minimum version imposed by Centos:8
-cmake_minimum_required( VERSION 3.11.0 )
 
 project(exiv2
     VERSION 0.28.5
