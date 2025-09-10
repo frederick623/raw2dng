@@ -69,6 +69,7 @@ raw2dng/config.h
 raw2dng/raw2dng
 libraw/LibRaw
 libjpeg/
+libjxl/lib
 
 downloads/*
 third_party/*/

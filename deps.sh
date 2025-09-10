@@ -103,3 +103,5 @@ main "$@"
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 sed -i '' -e '/cmake_minimum_required/d' $(find . -name CMakeLists.txt)
 sed -i '' -e '/# INSTALLATION/,$d' third_party/libjpeg/CMakeLists.txt
+sed -i '' -e '/- install library/,$d' third_party/highway/CMakeLists.txt
+
