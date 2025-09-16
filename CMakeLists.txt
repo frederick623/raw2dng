@@ -15,18 +15,20 @@ set(BUILD_SHARED_LIBS FALSE)
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 # set(CMAKE_OSX_MARIANO_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
 
-# where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 ADD_COMPILE_OPTIONS( -Wall )
 
+SET(BROTLI_BUNDLED_MODE TRUE)
 SET(JPEGXL_ENABLE_SJPEG FALSE)
 SET(JPEGXL_ENABLE_TOOLS FALSE)
 SET(JPEGXL_ENABLE_SKCMS TRUE)
 SET(JPEGXL_ENABLE_VIEWERS FALSE)
-
 SET(BUILD_TESTING FALSE)
+SET(WITH_JAVA FALSE)
+SET(ENABLE_SHARED FALSE)
+
 ADD_SUBDIRECTORY(third_party)
 set(JPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg)
 set(JPEG_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg)
@@ -73,8 +75,3 @@ add_library(RawConverterC STATIC
 target_link_libraries(RawConverterC PUBLIC
     raw2dng
 )
-
-# set(CMAKE_OSX_ARCHITECTURES "arm64")
-
-# install(TARGETS RawConverter DESTINATION lib)
-# install(FILES RawConverterC.h DESTINATION include)
