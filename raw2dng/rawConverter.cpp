@@ -57,7 +57,7 @@ RawConverter::RawConverter() {
 
     dng_xmp_sdk::InitializeSDK();
 
-    m_host.Reset(dynamic_cast<dng_host*>(new DngHost()));
+    m_host = std::make_unique<DngHost>();
     m_host->SetSaveDNGVersion(dngVersion_SaveDefault);
     m_host->SetSaveLinearDNG(false);
     m_host->SetKeepOriginalFile(true);
@@ -78,7 +78,7 @@ void RawConverter::openRawFile(const std::string& rawFilename) {
     // Create processor and parse raw files
 
 
-    m_negProcessor.Reset(NegativeProcessor::createProcessor(m_host, rawFilename.c_str()));
+    m_negProcessor = NegativeProcessor::createProcessor(*m_host, rawFilename.c_str());
 }
 
 
@@ -133,7 +133,7 @@ void RawConverter::renderPreviews() {
     // -----------------------------------------------------------------------------------------
     // Render JPEG and thumbnail previews
 
-    m_previewList.Reset(new dng_preview_list());
+    m_previewList = new dng_preview_list();
     dng_render negRender(*m_host, *m_negProcessor->getNegative());
 
 
@@ -171,7 +171,7 @@ void RawConverter::writeDng(const std::string& outFilename) {
     AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
 
     try {
-        dng_image_writer dngWriter; dngWriter.WriteDNG(*m_host, *targetFile, *m_negProcessor->getNegative(), m_previewList.Get());
+        dng_image_writer dngWriter; dngWriter.WriteDNG(*m_host, *targetFile, *m_negProcessor->getNegative(), m_previewList);
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing DNG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";

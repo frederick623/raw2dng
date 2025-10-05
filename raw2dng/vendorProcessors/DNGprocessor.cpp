@@ -28,7 +28,7 @@
 #include <exiv2/image.hpp>
 
 
-DNGprocessor::DNGprocessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
+DNGprocessor::DNGprocessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
                              : NegativeProcessor(host, rawProcessor, std::move(rawImage)) {
     // -----------------------------------------------------------------------------------------
     // Re-read source DNG using DNG SDK - we're ignoring the LibRaw/Exiv2 data structures from now on
@@ -39,15 +39,15 @@ DNGprocessor::DNGprocessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2:
         dng_file_stream stream(file.c_str());
 
         dng_info info;
-        info.Parse(*(m_host.Get()), stream);
-        info.PostParse(*(m_host.Get()));
+        info.Parse(m_host, stream);
+        info.PostParse(m_host);
         if (!info.IsValidDNG()) throw dng_exception(dng_error_bad_format);
 
-        m_negative->Parse(*(m_host.Get()), stream, info);
-        m_negative->PostParse(*(m_host.Get()), stream, info);
-        m_negative->ReadStage1Image(*(m_host.Get()), stream, info);
-        m_negative->ReadTransparencyMask(*(m_host.Get()), stream, info);
-        m_negative->ValidateRawImageDigest(*(m_host.Get()));
+        m_negative->Parse(m_host, stream, info);
+        m_negative->PostParse(m_host, stream, info);
+        m_negative->ReadStage1Image(m_host, stream, info);
+        m_negative->ReadTransparencyMask(m_host, stream, info);
+        m_negative->ValidateRawImageDigest(m_host);
     }
     catch (const dng_exception &except) {throw except;}
     catch (...) {throw dng_exception(dng_error_unknown);}

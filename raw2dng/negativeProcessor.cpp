@@ -63,7 +63,7 @@ const char* getDngErrorMessage(int errorCode) {
 }
 
 
-NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, const char *filename) {
+std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(dng_host& host, const char *filename) {
     // -----------------------------------------------------------------------------------------
     // Open and parse rawfile with libraw...
 
@@ -100,26 +100,27 @@ NegativeProcessor* NegativeProcessor::createProcessor(AutoPtr<dng_host> &host, c
     // Identify and create correct processor class
 
     if (rawProcessor->imgdata.idata.dng_version != 0) {
-        try {return new DNGprocessor(host, rawProcessor, std::move(rawImage));}
+        try {return std::unique_ptr<DNGprocessor>(new DNGprocessor(host, rawProcessor, std::move(rawImage)));}
         catch (dng_exception &e) {
             std::stringstream error; error << "Cannot parse source DNG-file (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
             throw std::runtime_error(error.str());
         }
     }
     else if (!strncmp(rawProcessor->imgdata.idata.model, "ILCE-7", 6))
-        return new ILCE7processor(host, rawProcessor, std::move(rawImage));
+        return std::unique_ptr<ILCE7processor>(new ILCE7processor(host, rawProcessor, std::move(rawImage)));
     else if (!strcmp(rawProcessor->imgdata.idata.make, "FUJIFILM"))
-        return new FujiProcessor(host, rawProcessor, std::move(rawImage));
+        return std::unique_ptr<FujiProcessor>(new FujiProcessor(host, rawProcessor, std::move(rawImage)));
 
-    return new VariousVendorProcessor(host, rawProcessor, std::move(rawImage));
+    return std::unique_ptr<VariousVendorProcessor>(new VariousVendorProcessor(host, rawProcessor, std::move(rawImage)));
 }
 
 
-NegativeProcessor::NegativeProcessor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
+NegativeProcessor::NegativeProcessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
                                    : m_RawProcessor(rawProcessor), m_RawImage(std::move(rawImage)),
                                      m_RawExif(m_RawImage->exifData()), m_RawXmp(m_RawImage->xmpData()),
-                                     m_host(host) {
-    m_negative.Reset(m_host->Make_dng_negative());
+                                     m_host(host), m_negative(m_host.Make_dng_negative()) 
+{
+    
 }
 
 
@@ -503,7 +504,7 @@ void NegativeProcessor::setXmpFromRaw(const dng_date_time_info &dateTimeNow, con
     // -----------------------------------------------------------------------------------------
     // Copy existing XMP-tags in raw-file to DNG
 
-    AutoPtr<dng_xmp> negXmp(new dng_xmp(m_host->Allocator()));
+    AutoPtr<dng_xmp> negXmp(new dng_xmp(m_host.Allocator()));
     for (Exiv2::XmpData::const_iterator it = m_RawXmp.begin(); it != m_RawXmp.end(); it++) {
         try {
             negXmp->Set(Exiv2::XmpProperties::nsInfo(it->groupName())->ns_, it->tagName().c_str(), it->toString().c_str());
@@ -535,7 +536,7 @@ void NegativeProcessor::backupProprietaryData() {
     AutoPtr<dng_memory_stream> DNGPrivateTag(createDNGPrivateTag());
 
     if (DNGPrivateTag.Get()) {
-        AutoPtr<dng_memory_block> blockPriv(DNGPrivateTag->AsMemoryBlock(m_host->Allocator()));
+        AutoPtr<dng_memory_block> blockPriv(DNGPrivateTag->AsMemoryBlock(m_host.Allocator()));
         m_negative->SetPrivateData(blockPriv);
     }
 }
@@ -552,7 +553,7 @@ dng_memory_stream* NegativeProcessor::createDNGPrivateTag() {
         getRawExifTag("Exif.Photo.MakerNote", &mnLength, &mnBuffer)) {
         bool padding = (mnLength & 0x01) == 0x01;
 
-        dng_memory_stream *streamPriv = new dng_memory_stream(m_host->Allocator());
+        dng_memory_stream *streamPriv = new dng_memory_stream(m_host.Allocator());
         streamPriv->SetBigEndian();
 
         // -----------------------------------------------------------------------------------------
@@ -601,7 +602,7 @@ void NegativeProcessor::buildDNGImage() {
     // Create new dng_image and copy data
 
     dng_rect bounds = dng_rect(sizes->raw_height, sizes->raw_width);
-    dng_simple_image *image = new dng_simple_image(bounds, outputPlanes, ttShort, m_host->Allocator());
+    dng_simple_image *image = new dng_simple_image(bounds, outputPlanes, ttShort, m_host.Allocator());
 
     dng_pixel_buffer buffer; image->GetPixelBuffer(buffer);
     unsigned short *imageBuffer = (unsigned short*)buffer.fData;
@@ -633,7 +634,7 @@ void NegativeProcessor::embedOriginalRaw(const char *rawFilename) {
     uint32 rawFileSize = static_cast<uint32>(rawDataStream.Length());
     uint32 numberRawBlocks = static_cast<uint32>(floor((rawFileSize + 65535.0) / 65536.0));
 
-    dng_memory_stream embeddedRawStream(m_host->Allocator());
+    dng_memory_stream embeddedRawStream(m_host.Allocator());
     embeddedRawStream.SetBigEndian(true);
     embeddedRawStream.Put_uint32(rawFileSize);
     for (uint32 block = 0; block < numberRawBlocks; block++) 
@@ -696,7 +697,7 @@ void NegativeProcessor::embedOriginalRaw(const char *rawFilename) {
     embeddedRawStream.Put_uint32(0);
     embeddedRawStream.Put_uint32(0);
 
-    AutoPtr<dng_memory_block> block(embeddedRawStream.AsMemoryBlock(m_host->Allocator()));
+    AutoPtr<dng_memory_block> block(embeddedRawStream.AsMemoryBlock(m_host.Allocator()));
     m_negative->SetOriginalRawFileData(block);
     m_negative->FindOriginalRawFileDigest();
 }

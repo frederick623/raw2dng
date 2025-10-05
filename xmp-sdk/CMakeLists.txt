@@ -6,7 +6,7 @@ ADD_DEFINITIONS(${EXPAT_DEFINITIONS})
 # =======================================================
 # XMP SDK source code.
 
-ADD_LIBRARY( xmp-sdk OBJECT 
+ADD_LIBRARY( xmp-sdk STATIC 
              ${CMAKE_CURRENT_SOURCE_DIR}/source/Host_IO-POSIX.cpp
 #            ${CMAKE_CURRENT_SOURCE_DIR}/source/Host_IO-Win.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/IOUtils.cpp

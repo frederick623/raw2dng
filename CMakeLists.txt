@@ -54,6 +54,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expat)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
 ADD_SUBDIRECTORY(libraw)
 ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
@@ -61,17 +64,3 @@ ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( raw2dng )
 
-add_executable(rawConverter
-    ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng/raw2dng.cpp
-)
-
-# Link against the library the child built
-target_link_libraries(rawConverter PRIVATE raw2dng)
-
-add_library(RawConverterC STATIC
-    rawConverterC.cpp
-)
-
-target_link_libraries(RawConverterC PUBLIC
-    raw2dng
-)

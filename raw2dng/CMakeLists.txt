@@ -2,11 +2,6 @@
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# The version number.
-SET(RAW2DNG_VERSION_MAJOR 1)
-SET(RAW2DNG_VERSION_MINOR 2)
-SET(RAW2DNG_VERSION_PATCH 3)
-
 # configure a header file to pass some of the CMake settings
 # to the source code
 CONFIGURE_FILE ( "${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake"
@@ -16,7 +11,7 @@ FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
-ADD_LIBRARY( raw2dng STATIC
+ADD_LIBRARY( rawConverter STATIC
                 ${CMAKE_CURRENT_SOURCE_DIR}/dnghost.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/negativeProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/rawConverter.cpp
@@ -25,11 +20,9 @@ ADD_LIBRARY( raw2dng STATIC
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/FujiProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/variousVendorProcessor.cpp )
 
-TARGET_INCLUDE_DIRECTORIES( raw2dng PUBLIC
+TARGET_INCLUDE_DIRECTORIES( rawConverter PUBLIC
                     ${CMAKE_CURRENT_SOURCE_DIR} 
                     )
 
-TARGET_LINK_LIBRARIES( raw2dng PUBLIC xmp-sdk dng-sdk exiv2lib raw ${ZLIB_LIBRARIES} )
-
-TARGET_COMPILE_OPTIONS( raw2dng PRIVATE -fexceptions -std=c++11 )
+TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dng-sdk exiv2lib raw ${ZLIB_LIBRARIES} )
 

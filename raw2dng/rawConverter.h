@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "negativeProcessor.h"
-
+#include <memory>
 #include <string>
 
+#include "negativeProcessor.h"
 #include "dng_auto_ptr.h"
 #include "dng_string.h"
 #include "dng_image_writer.h"
@@ -45,10 +45,9 @@ public:
    void writeJpeg(const std::string& outFilename);
 
 private:
-   AutoPtr<dng_host> m_host;
-   AutoPtr<NegativeProcessor> m_negProcessor;
-   AutoPtr<dng_preview_list> m_previewList;
-
+   std::unique_ptr<dng_host> m_host;
+   std::unique_ptr<NegativeProcessor> m_negProcessor;
+   dng_preview_list* m_previewList;
    dng_string m_appName, m_appVersion;
    dng_date_time_info m_dateTimeNow;
 

@@ -161,7 +161,7 @@ public:
 };
 
 
-ILCE7processor::ILCE7processor(AutoPtr<dng_host> &host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
+ILCE7processor::ILCE7processor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
                              : NegativeProcessor(host, rawProcessor, std::move(rawImage)) {}
 
 
@@ -361,7 +361,7 @@ dng_memory_stream* ILCE7processor::createDNGPrivateTag() {
         uint32_t fullLength = SR2SubOffset - SR2offset + SR2SubLength;
         bool padding = (fullLength & 0x01) == 0x01;
 
-        AutoPtr<dng_memory_block> SR2block(m_host->Allocate(fullLength));
+        AutoPtr<dng_memory_block> SR2block(m_host.Allocate(fullLength));
         io->seek(SR2offset, Exiv2::BasicIo::beg);
         io->read(SR2block->Buffer_uint8(), fullLength);
 
