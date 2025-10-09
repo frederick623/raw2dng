@@ -100,9 +100,12 @@ main() {
 }
 
 main "$@"
-DIR="$( cd "$( dirname "$0" )" && pwd )"
+
 sed -i '' -e '/cmake_minimum_required/d' $(find . -name CMakeLists.txt)
 sed -i '' -e '/option.ENABLE_SHARED/d' third_party/libjpeg/CMakeLists.txt
+if ! grep  "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" third_party/libjpeg/CMakeLists.txt > /dev/null; then
+  sed -i '' -e '1i\'$'\n''set\(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \$\{CMAKE_BINARY_DIR\}/lib\)' third_party/libjpeg/CMakeLists.txt
+fi
 sed -i '' -e '/# INSTALLATION/,$d' third_party/libjpeg/CMakeLists.txt
 sed -i '' -e '/- install library/,$d' third_party/highway/CMakeLists.txt
 

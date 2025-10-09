@@ -1,12 +1,15 @@
 
 CMAKE_MINIMUM_REQUIRED( VERSION 3.10.1 )
 
+PROJECT( raw2dng )
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
 execute_process( COMMAND bash deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULT_VARIABLE DEPS_RESULT )
 if(NOT DEPS_RESULT EQUAL 0) 
     message(FATAL_ERROR "Failed to run deps.sh") 
 endif()
 
-PROJECT( raw2dng )
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
@@ -54,9 +57,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expat)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
 ADD_SUBDIRECTORY(libraw)
 ADD_SUBDIRECTORY(md5)
 ADD_SUBDIRECTORY(xmp-sdk)
@@ -64,3 +64,9 @@ ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( raw2dng )
 
+add_executable(raw2dng
+    ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng.cpp
+)
+
+# Link against the library the child built
+target_link_libraries(raw2dng PRIVATE rawConverter)

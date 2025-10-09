@@ -21,6 +21,7 @@
 
 #include <stdexcept>
 
+#include "dng_date_time.h"
 #include "dng_negative.h"
 #include "dng_image_writer.h"
 #include "dng_preview.h"
@@ -51,7 +52,11 @@ dng_file_stream* openFileStream(const std::string& outFilename) {
 }
 
 
-RawConverter::RawConverter() {
+RawConverter::RawConverter() 
+: m_appName("raw2dng")
+, m_appVersion(RAW2DNG_VERSION_STR)
+, m_dateTimeNow(std::make_unique<dng_date_time_info>())
+{
     // -----------------------------------------------------------------------------------------
     // Init XMP SDK and some global variables we will need
 
@@ -62,14 +67,13 @@ RawConverter::RawConverter() {
     m_host->SetSaveLinearDNG(false);
     m_host->SetKeepOriginalFile(true);
 
-    m_appName.Set("raw2dng");
-    m_appVersion.Set(RAW2DNG_VERSION_STR);
-    CurrentDateTimeAndZone(m_dateTimeNow);
+    CurrentDateTimeAndZone(*m_dateTimeNow);
 }
 
 
 RawConverter::~RawConverter() {
     dng_xmp_sdk::TerminateSDK();
+    if (m_previewList) delete m_previewList;
 }
 
 
@@ -90,9 +94,9 @@ void RawConverter::buildNegative(const std::string& dcpFilename) {
     m_negProcessor->setDNGPropertiesFromRaw();
     m_negProcessor->setCameraProfile(dcpFilename.c_str());
 
-    dng_string appNameVersion(m_appName); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.Get());
-    m_negProcessor->setExifFromRaw(m_dateTimeNow, appNameVersion);
-    m_negProcessor->setXmpFromRaw(m_dateTimeNow, appNameVersion);
+    dng_string appNameVersion(m_appName.c_str()); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.c_str());
+    m_negProcessor->setExifFromRaw(*m_dateTimeNow, appNameVersion);
+    m_negProcessor->setXmpFromRaw(*m_dateTimeNow, appNameVersion);
 
     m_negProcessor->getNegative()->RebuildIPTC(true);
 
@@ -138,9 +142,9 @@ void RawConverter::renderPreviews() {
 
 
     dng_jpeg_preview *jpeg_preview = new dng_jpeg_preview();
-    jpeg_preview->fInfo.fApplicationName.Set_ASCII(m_appName.Get());
-    jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.Get());
-    jpeg_preview->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
+    jpeg_preview->fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
+    jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
+    jpeg_preview->fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
     jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
 
     negRender.SetMaximumSize(1024);
@@ -218,9 +222,9 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
     AutoPtr<dng_image> negImage(negRender.Render());
 
     AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
-    jpeg->fInfo.fApplicationName.Set_ASCII(m_appName.Get());
-    jpeg->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.Get());
-    jpeg->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
+    jpeg->fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
+    jpeg->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
+    jpeg->fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
     jpeg->fInfo.fColorSpace = previewColorSpace_sRGB;
 
     dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(*m_host, *negImage.Get(), *jpeg.Get(), 8);

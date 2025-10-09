@@ -12,7 +12,7 @@ ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 # =======================================================
 # DNG SDK source code
 
-ADD_LIBRARY( dng-sdk STATIC
+ADD_LIBRARY( dngsdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_1d_function.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_1d_table.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_abort_sniffer.cpp
@@ -84,9 +84,9 @@ ADD_LIBRARY( dng-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_xmp_sdk.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/source/dng_xy_coord.cpp )
 
-TARGET_INCLUDE_DIRECTORIES( dng-sdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
+TARGET_INCLUDE_DIRECTORIES( dngsdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
 
-TARGET_COMPILE_DEFINITIONS( dng-sdk PUBLIC
+TARGET_COMPILE_DEFINITIONS( dngsdk PUBLIC
                             -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
                             -DqDNGThreadSafe=1                 # we're thread-safe - will use pthreads
                             -DkLocalUseThreads=1 
@@ -103,15 +103,15 @@ IF(NOT IS_BIG_ENDIAN)
     ADD_DEFINITIONS(-DqDNGLittleEndian=1)
 ENDIF(NOT IS_BIG_ENDIAN)
 
-TARGET_COMPILE_OPTIONS( dng-sdk PRIVATE -fexceptions )
+TARGET_COMPILE_OPTIONS( dngsdk PRIVATE -fexceptions )
 
 if (APPLE)
     # Find the CoreFoundation framework
     find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
     find_library(CORE_SERVICES CoreServices)
     message ( ${CORE_FOUNDATION_FRAMEWORK})
-    TARGET_LINK_LIBRARIES(dng-sdk PRIVATE ${CORE_FOUNDATION_FRAMEWORK} ${CORE_SERVICES} )
+    TARGET_LINK_LIBRARIES(dngsdk PRIVATE ${CORE_FOUNDATION_FRAMEWORK} ${CORE_SERVICES} )
 endif()
 
 
-TARGET_LINK_LIBRARIES( dng-sdk PUBLIC xmp-sdk jxl jxl_threads jpeg-static ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )
+TARGET_LINK_LIBRARIES( dngsdk PUBLIC xmp-sdk jxl jxl_threads jpeg-static ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )

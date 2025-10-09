@@ -21,13 +21,10 @@
 #include <memory>
 #include <string>
 
-#include "negativeProcessor.h"
-#include "dng_auto_ptr.h"
-#include "dng_string.h"
-#include "dng_image_writer.h"
-#include "dng_preview.h"
-#include "dng_date_time.h"
-
+class dng_date_time_info;
+class dng_host;
+class dng_preview_list;
+class NegativeProcessor;
 
 class RawConverter {
 public:
@@ -45,10 +42,10 @@ public:
    void writeJpeg(const std::string& outFilename);
 
 private:
+   std::unique_ptr<dng_date_time_info> m_dateTimeNow;
    std::unique_ptr<dng_host> m_host;
    std::unique_ptr<NegativeProcessor> m_negProcessor;
-   dng_preview_list* m_previewList;
-   dng_string m_appName, m_appVersion;
-   dng_date_time_info m_dateTimeNow;
+   std::string m_appName, m_appVersion;
+   dng_preview_list* m_previewList{nullptr};
 
 };

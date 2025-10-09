@@ -2,6 +2,10 @@
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+SET(RAW2DNG_VERSION_MAJOR 1)
+SET(RAW2DNG_VERSION_MINOR 2)
+SET(RAW2DNG_VERSION_PATCH 3)
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 CONFIGURE_FILE ( "${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake"
@@ -24,5 +28,5 @@ TARGET_INCLUDE_DIRECTORIES( rawConverter PUBLIC
                     ${CMAKE_CURRENT_SOURCE_DIR} 
                     )
 
-TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dng-sdk exiv2lib raw ${ZLIB_LIBRARIES} )
+TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dngsdk exiv2lib raw ${ZLIB_LIBRARIES} )
 
