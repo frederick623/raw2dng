@@ -89,11 +89,8 @@ main() {
   # Sources downloaded from a tarball.
   download_github third_party/brotli google/brotli
   download_github third_party/highway google/highway
-  download_github third_party/sjpeg webmproject/sjpeg
   download_github third_party/skcms \
     "https://skia.googlesource.com/skcms/+archive/"
-  download_github third_party/zlib madler/zlib
-  download_github third_party/libpng glennrp/libpng
   download_gz third_party/libjpeg \
     "https://github.com/winlibs/libjpeg/archive/refs/tags/libjpeg-turbo-2.1.0.tar.gz"
   echo "Done."

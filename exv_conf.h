@@ -49,7 +49,7 @@
 #endif
 
 // Define if you have the zlib library.
-#define EXV_HAVE_LIBZ
+/* #undef EXV_HAVE_LIBZ */
 
 // Define if you have the brotli library.
 /* #undef EXV_HAVE_BROTLI */

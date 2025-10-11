@@ -143,40 +143,10 @@ function(strip_static OUTPUT_VAR LIB_LIST)
   set(${OUTPUT_VAR} ${out_list} PARENT_SCOPE)
 endfunction()
 
+find_package(Threads REQUIRED)
 # The jxl library definition.
-include(jxl.cmake)
-
-# Other libraries outside the core jxl library.
+include(jxl.cmake)# Other libraries outside the core jxl library.
 if(JPEGXL_ENABLE_TOOLS)
   include(jxl_extras.cmake)
 endif()
 include(jxl_threads.cmake)
-# We only build JPEGLI on linux for now.
-find_package(JPEG)
-if (JPEG_FOUND AND JPEGXL_ENABLE_JPEGLI)
-  include(jpegli.cmake)
-endif()
-
-# Install all the library headers from the source and the generated ones. There
-# is no distinction on which libraries use which header since it is expected
-# that all developer libraries are available together at build time.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/jxl
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/jxl
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-
-# Profiler for libjxl
-include(jxl_profiler.cmake)
-
-if(BUILD_TESTING)
-# Unittests
-cmake_policy(SET CMP0057 NEW)  # https://gitlab.kitware.com/cmake/cmake/issues/18198
-include(GoogleTest)
-
-# Tests for the jxl library.
-include(jxl_tests.cmake)
-
-# Google benchmark for the jxl library
-include(jxl_benchmark.cmake)
-
-endif()  # BUILD_TESTING
