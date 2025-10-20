@@ -121,5 +121,3 @@ if (JPEGXL_ENABLE_VIEWERS OR NOT JPEGXL_ENABLE_SKCMS)
                    ${PROJECT_BINARY_DIR}/LICENSE.lcms COPYONLY)
   endif()
 endif()
-
-add_subdirectory(libjpeg)

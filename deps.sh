@@ -13,12 +13,10 @@ MYDIR=$(dirname $(realpath "$0"))
 
 # Git revisions we use for the given submodules. Update these whenever you
 # update a git submodule.
-THIRD_PARTY_BROTLI="35ef5c554d888bef217d449346067de05e269b30"
-THIRD_PARTY_HIGHWAY="f670ea580bb70b4113b63b9cdaa42ba9b10cd13a"
-THIRD_PARTY_SKCMS="b25b07b4b07990811de121c0356155b2ba0f4318"
-THIRD_PARTY_SJPEG="868ab558fad70fcbe8863ba4e85179eeb81cc840"
-THIRD_PARTY_ZLIB="cacf7f1d4e3d44d871b605da3b647f07d718623f"
-THIRD_PARTY_LIBPNG="a40189cf881e9f0db80511c382292a5604c3c3d1"
+LIBJXL_THIRD_PARTY_BROTLI="35ef5c554d888bef217d449346067de05e269b30"
+LIBJXL_THIRD_PARTY_HIGHWAY="f670ea580bb70b4113b63b9cdaa42ba9b10cd13a"
+LIBJXL_THIRD_PARTY_SKCMS="b25b07b4b07990811de121c0356155b2ba0f4318"
+LIBJPEG="868ab558fad70fcbe8863ba4e85179eeb81cc840"
 
 # Download the target revision from GitHub.
 download_github() {
@@ -26,7 +24,8 @@ download_github() {
   local project="$2"
 
   local varname=`echo "$path" | tr '[:lower:]' '[:upper:]'`
-  varname="${varname/\//_}"
+  varname="${varname//\//_}"
+  echo $varname
   local sha
   eval "sha=\${${varname}}"
 
@@ -52,7 +51,7 @@ download_github() {
     url="https://github.com/${project}/tarball/${sha}"
   fi
 
-  echo "Downloading ${path} version ${sha}..." >&2
+  echo "Downloading ${path} version ${sha} from ${url} ..." >&2
   mkdir -p "${down_dir}"
   curl -L --show-error -o "${local_fn}.tmp" "${url}"
   mkdir -p "${MYDIR}/${path}"
@@ -87,11 +86,11 @@ download_gz() {
 
 main() {
   # Sources downloaded from a tarball.
-  download_github third_party/brotli google/brotli
-  download_github third_party/highway google/highway
-  download_github third_party/skcms \
+  download_github libjxl/third_party/brotli google/brotli
+  download_github libjxl/third_party/highway google/highway
+  download_github libjxl/third_party/skcms \
     "https://skia.googlesource.com/skcms/+archive/"
-  download_gz third_party/libjpeg \
+  download_gz libjpeg \
     "https://github.com/winlibs/libjpeg/archive/refs/tags/libjpeg-turbo-2.1.0.tar.gz"
   echo "Done."
 }
@@ -99,10 +98,10 @@ main() {
 main "$@"
 
 sed -i '' -e '/cmake_minimum_required/d' $(find . -name CMakeLists.txt)
-sed -i '' -e '/option.ENABLE_SHARED/d' third_party/libjpeg/CMakeLists.txt
-if ! grep  "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" third_party/libjpeg/CMakeLists.txt > /dev/null; then
-  sed -i '' -e '1i\'$'\n''set\(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \$\{CMAKE_BINARY_DIR\}/lib\)' third_party/libjpeg/CMakeLists.txt
+sed -i '' -e '/option.ENABLE_SHARED/d' libjpeg/CMakeLists.txt
+if ! grep  "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" libjpeg/CMakeLists.txt > /dev/null; then
+  sed -i '' -e '1i\'$'\n''set\(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \$\{CMAKE_BINARY_DIR\}/lib\)' libjpeg/CMakeLists.txt
 fi
-sed -i '' -e '/# INSTALLATION/,$d' third_party/libjpeg/CMakeLists.txt
-sed -i '' -e '/- install library/,$d' third_party/highway/CMakeLists.txt
+sed -i '' -e '/# INSTALLATION/,$d' libjpeg/CMakeLists.txt
+sed -i '' -e '/- install library/,$d' libjxl/third_party/highway/CMakeLists.txt
 
