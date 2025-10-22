@@ -72,7 +72,7 @@ libjpeg/
 libjxl/lib
 
 downloads/*
-third_party/*/
+libjxl/third_party/*/
 *.xcodeproj/
 
 LICENSE*
