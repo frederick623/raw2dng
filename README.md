@@ -10,4 +10,5 @@ All major dependencies (dng-sdk, exiv2, xmp-sdk, libraw, libjxl) are incl and bu
 
 **Compile for MacOS:** `cmake`, `make`
 
-**Compile for iOS:** `cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SYSTEM_PROCESSOR=arm64 .`, `make`
+**Compile from Library for MacOS:**  clang++ -std=c++17 raw2dng.cpp -Llib -lrawConverter -lraw -ldngsdk -ljxl -ljxl_threads -ljpeg -lz -lexpat -lexiv2 -lxmp-sdk -lmd5 -liconv -framework CoreFoundation -framework CoreServices
+
