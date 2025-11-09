@@ -30,7 +30,8 @@ ADD_LIBRARY( xmp-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPMeta-Serialize.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPMeta.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils-FileInfo.cpp
-             ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils.cpp )
+             ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils.cpp 
+             ${CMAKE_CURRENT_SOURCE_DIR}/MD5.cpp)
 
 TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
                             -DMAC_ENV=1             # Windows is -DWIN_ENV=1
@@ -40,4 +41,3 @@ TARGET_COMPILE_OPTIONS( xmp-sdk PRIVATE -w )
 
 TARGET_INCLUDE_DIRECTORIES( xmp-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/public/include 
                                     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-TARGET_LINK_LIBRARIES( xmp-sdk PUBLIC md5 ${EXPAT_LIBRARIES} )
