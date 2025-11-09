@@ -1,5 +1,5 @@
 
-#include "raw2dng/rawConverter.h"
+#include "rawConverter/rawConverter.h"
 
 struct Raw2Dng
 {

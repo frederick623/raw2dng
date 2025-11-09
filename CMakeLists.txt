@@ -60,7 +60,7 @@ ADD_SUBDIRECTORY(libraw)
 ADD_SUBDIRECTORY(xmp-sdk)
 ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
-ADD_SUBDIRECTORY( raw2dng )
+ADD_SUBDIRECTORY( rawConverter )
 
 # add_executable(raw2dng ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng.cpp)
 add_library(raw2dng ${CMAKE_CURRENT_SOURCE_DIR}/raw2dng.cpp)
