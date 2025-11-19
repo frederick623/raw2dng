@@ -73,7 +73,6 @@ libjxl/lib
 
 downloads/*
 libjxl/third_party/*/
-*.xcodeproj/
 
 LICENSE*
 
