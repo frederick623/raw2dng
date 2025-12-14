@@ -87,7 +87,6 @@ ADD_LIBRARY( dngsdk STATIC
 TARGET_INCLUDE_DIRECTORIES( dngsdk INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source )
 
 TARGET_COMPILE_DEFINITIONS( dngsdk PUBLIC
-                            -DqWinOS=0 -DqMacOS=1 -DqLinux=0   # platform for dng-sdk
                             -DqDNGThreadSafe=1                 # we're thread-safe - will use pthreads
                             -DkLocalUseThreads=1 
 #                           -DqDNG64Bit=1                      # set manually to support 64bit platforms (todo: add test)
@@ -96,6 +95,13 @@ TARGET_COMPILE_DEFINITIONS( dngsdk PUBLIC
                             -DqDNGUseLibJPEG=1                 # use libjpeg
                             -DqDNGXMPFiles=0 -DqDNGXMPDocOps=0 # build minimal XMP-set
                             -DqDNGUseStdInt=1 )                # Must be set to 1, else do not compile under Linux.
+                     
+IF(DEFINED IOS_BUILD)
+    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqiPhone=1)
+ELSE() 
+    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=1 -DqLinux=0) # platform for dng-sdk
+ENDIF()
+
 # Check processor endianness (todo: not sure bigEndian platforms are set correctly)
 INCLUDE(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
