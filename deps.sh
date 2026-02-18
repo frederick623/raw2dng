@@ -104,13 +104,17 @@ if ! grep  "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" libjpeg/CMakeLists.txt > /dev/null; 
 fi
 sed -i '' -e '/# INSTALLATION/,$d' libjpeg/CMakeLists.txt
 sed -i '' -e '/- install library/,$d' libjxl/third_party/highway/CMakeLists.txt
-sed -i '' -e '$a\
-add_library(hwy-obj OBJECT ${HWY_SOURCES})' libjxl/third_party/highway/CMakeLists.txt
-sed -i '' -e '$a\
-target_include_directories(hwy-obj PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)' libjxl/third_party/highway/CMakeLists.txt
-sed -i '' -e '$a\
-add_library(brotlicommon-static-obj OBJECT ${BROTLI_COMMON_C})' libjxl/third_party/brotli/CMakeLists.txt
-sed -i '' -e '$a\
-add_library(brotlidec-static-obj OBJECT ${BROTLI_DEC_C})' libjxl/third_party/brotli/CMakeLists.txt
-sed -i '' -e '$a\
-add_library(brotlienc-static-obj OBJECT ${BROTLI_ENC_C})' libjxl/third_party/brotli/CMakeLists.txt
+if ! grep  "hwy-obj" libjxl/third_party/highway/CMakeLists.txt > /dev/null; then
+  sed -i '' -e '$a\
+  add_library(hwy-obj OBJECT ${HWY_SOURCES})' libjxl/third_party/highway/CMakeLists.txt
+  sed -i '' -e '$a\
+  target_include_directories(hwy-obj PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)' libjxl/third_party/highway/CMakeLists.txt
+fi
+if ! grep  "brotlicommon-static-obj" libjxl/third_party/brotli/CMakeLists.txt > /dev/null; then
+  sed -i '' -e '$a\
+  add_library(brotlicommon-static-obj OBJECT ${BROTLI_COMMON_C})' libjxl/third_party/brotli/CMakeLists.txt
+  sed -i '' -e '$a\
+  add_library(brotlidec-static-obj OBJECT ${BROTLI_DEC_C})' libjxl/third_party/brotli/CMakeLists.txt
+  sed -i '' -e '$a\
+  add_library(brotlienc-static-obj OBJECT ${BROTLI_ENC_C})' libjxl/third_party/brotli/CMakeLists.txt
+fi

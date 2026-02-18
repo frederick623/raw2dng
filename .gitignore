@@ -82,3 +82,4 @@ bin/
 *.DNG
 
 build_xcode_ios/*
+exiv2*

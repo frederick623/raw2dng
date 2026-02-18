@@ -30,7 +30,7 @@ it under the terms of the one of two licenses as you choose:
 /* #undef LIBRAW_USE_OPENMP */
 
 /* Define to 1 if LibRaw have been compiled with LCMS support */
-/* #undef LIBRAW_USE_LCMS */
+#define LIBRAW_USE_LCMS 1
 
 /* Define to 1 if LibRaw have been compiled with RedCine codec support */
 /* #undef LIBRAW_USE_REDCINECODEC */
