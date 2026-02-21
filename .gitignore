@@ -82,3 +82,6 @@ bin/
 *.DNG
 
 exiv2*
+*.pc
+
+
