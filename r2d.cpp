@@ -1,8 +1,44 @@
 
-#include "raw2dng.h"
-
 #include <iostream>
 #include <stdexcept>
+
+#include "rawConverter/rawConverter.h"
+
+struct Raw2Dng
+{
+    void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    {
+        converter.openRawFile(rawFilename);
+        converter.buildNegative(dcpFilename);
+        // if (embedOriginal) converter.embedRaw(rawFilename);
+        converter.renderImage();
+        converter.renderPreviews();
+        converter.writeDng(outFilename);
+    }
+
+    void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    {
+        converter.openRawFile(rawFilename);
+        converter.buildNegative(dcpFilename);
+        // if (embedOriginal) converter.embedRaw(rawFilename);
+        converter.renderImage();
+        converter.renderPreviews();
+        converter.writeTiff(outFilename);
+    }
+
+    void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    {
+        converter.openRawFile(rawFilename);
+        converter.buildNegative(dcpFilename);
+        // if (embedOriginal) converter.embedRaw(rawFilename);
+        converter.renderImage();
+        converter.renderPreviews();
+        converter.writeJpeg(outFilename);
+    }
+
+private:
+    RawConverter converter;
+};
 
 int main(int argc, const char* argv []) {  
     if (argc == 1) {
