@@ -97,7 +97,7 @@ TARGET_COMPILE_DEFINITIONS( dngsdk PUBLIC
                             -DqDNGUseStdInt=1 )                # Must be set to 1, else do not compile under Linux.
                      
 IF(DEFINED IOS_BUILD)
-    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqiPhone=1)
+    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=0 -DqLinux=0 -DqiPhone=1 -DTARGET_OS_IPHONE=1)
 ELSE() 
     TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=1 -DqLinux=0) # platform for dng-sdk
 ENDIF()

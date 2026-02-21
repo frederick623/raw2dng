@@ -103,6 +103,10 @@ if ! grep  "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" libjpeg/CMakeLists.txt > /dev/null; 
   sed -i '' -e '1i\'$'\n''set\(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \$\{CMAKE_BINARY_DIR\}/lib\)' libjpeg/CMakeLists.txt
 fi
 sed -i '' -e '/# INSTALLATION/,$d' libjpeg/CMakeLists.txt
+if ! grep 'set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR' libjpeg/CMakeLists.txt > /dev/null; then
+  sed -i '' -e  '1i\
+set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "System processor type")' libjpeg/CMakeLists.txt
+fi
 sed -i '' -e '/- install library/,$d' libjxl/third_party/highway/CMakeLists.txt
 if ! grep  "hwy-obj" libjxl/third_party/highway/CMakeLists.txt > /dev/null; then
   sed -i '' -e '$a\

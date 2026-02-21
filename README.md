@@ -10,5 +10,5 @@ All major dependencies (dng-sdk, exiv2, xmp-sdk, libraw, libjxl) are incl and bu
 
 **Compile for MacOS:** `cmake`, `make`
 
-**Compile from Library for MacOS:**  clang++ -std=c++17 test.cpp -Llib -lraw2dng -lrawConverter -lraw -ldngsdk -ljxl -ljxl_threads -ljpeg -lz -lexpat -lexiv2 -lxmp-sdk -liconv -framework CoreFoundation -framework CoreServices
+**Compile from Library for MacOS:**  clang++ -std=c++17 r2d.cpp -Llib -lraw2dng -lrawConverter -lraw -ldngsdk -ljxl -ljxl_threads -ljpeg -lz -lexpat -lexiv2 -lxmp-sdk -liconv -framework CoreFoundation -framework CoreServices
 
