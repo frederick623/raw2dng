@@ -42,7 +42,7 @@ FetchContent_Declare(
     LibRaw
     GIT_REPOSITORY https://github.com/LibRaw/LibRaw/
     GIT_TAG        9646d77  
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/libraw/LibRaw
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/libraw/LibRaw
 )
 
 FetchContent_MakeAvailable(LibRaw)
