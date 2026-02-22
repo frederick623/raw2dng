@@ -62,7 +62,8 @@ ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( rawConverter )
 
-add_executable(r2d ${CMAKE_CURRENT_SOURCE_DIR}/r2d.cpp)
-
-# Link against the library the child built
-target_link_libraries(r2d PRIVATE rawConverter)
+If (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
+    add_executable(r2d ${CMAKE_CURRENT_SOURCE_DIR}/r2d.cpp)
+    # Link against the library the child built
+    target_link_libraries(r2d PRIVATE rawConverter)
+endif()
