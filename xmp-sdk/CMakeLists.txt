@@ -33,10 +33,20 @@ ADD_LIBRARY( xmp-sdk STATIC
              ${CMAKE_CURRENT_SOURCE_DIR}/XMPCore/source/XMPUtils.cpp 
              ${CMAKE_CURRENT_SOURCE_DIR}/MD5.cpp)
 
-TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
+IF(APPLE)
+    TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
                             -DMAC_ENV=1             # Windows is -DWIN_ENV=1
-#                           -XMP_64=1                # manually set 64-bit
                           )
+ELSEIF(UNIX)
+    TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
+                            -DUNIX_ENV=1             # Windows is -DWIN_ENV=1
+                          )
+ELSE()
+    TARGET_COMPILE_DEFINITIONS( xmp-sdk PUBLIC 
+                              -XMP_64=1                # manually set 64-bit
+                            )
+ENDIF()
+
 TARGET_COMPILE_OPTIONS( xmp-sdk PRIVATE -w )
 
 TARGET_INCLUDE_DIRECTORIES( xmp-sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/public/include 

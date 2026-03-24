@@ -12,7 +12,12 @@ endif()
 
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    message(STATUS "Setting build type to 'Release' as none was specified.")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    # Set the possible values of build type for cmake-gui
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 set(BUILD_SHARED_LIBS FALSE)
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15") # Adjust to your target iOS version
@@ -61,6 +66,11 @@ ADD_SUBDIRECTORY(xmp-sdk)
 ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( rawConverter )
+
+if(USE_ASAN)
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address)
+endif()
 
 If (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     add_executable(r2d ${CMAKE_CURRENT_SOURCE_DIR}/r2d.cpp)

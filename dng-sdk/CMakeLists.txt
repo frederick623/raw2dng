@@ -98,8 +98,12 @@ TARGET_COMPILE_DEFINITIONS( dngsdk PUBLIC
                      
 IF(DEFINED IOS_BUILD)
     TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=0 -DqLinux=0 -DqiPhone=1 -DTARGET_OS_IPHONE=1)
-ELSE() 
+ELSEIF(APPLE)
     TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=1 -DqLinux=0) # platform for dng-sdk
+ELSEIF(UNIX)
+    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=0 -DqMacOS=0 -DqLinux=1) # platform for dng-sdk
+ELSE() 
+    TARGET_COMPILE_DEFINITIONS(dngsdk PUBLIC -DqWinOS=1 -DqMacOS=0 -DqLinux=0) # platform for dng-sdk
 ENDIF()
 
 # Check processor endianness (todo: not sure bigEndian platforms are set correctly)
