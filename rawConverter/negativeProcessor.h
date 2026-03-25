@@ -20,23 +20,25 @@
 
 #include <memory>
 
-#include <dng_host.h>
 #include <dng_negative.h>
 #include <dng_render.h>
 #include <dng_exif.h>
 #include <exiv2/image.hpp>
 #include <libraw/libraw.h>
 
+#include "dnghost.h"
+
 const char* getDngErrorMessage(int errorCode);
 
 class NegativeProcessor {
 public:
-   NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   NegativeProcessor(std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
 
-   static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename);
+   static std::unique_ptr<NegativeProcessor> createProcessor(const char *filename);
    virtual ~NegativeProcessor() = default;
 
    dng_negative& getNegative() { return *m_negative; }
+   DngHost& getHost() { return m_host; }
 
    // Different raw/DNG processing stages - usually called in this sequence
    virtual void setDNGPropertiesFromRaw();
@@ -80,6 +82,6 @@ protected:
    Exiv2::XmpData m_RawXmp;
 
    // Target: DNG-file
-   dng_host& m_host;
+   DngHost m_host;
    std::unique_ptr<dng_negative> m_negative;
 };

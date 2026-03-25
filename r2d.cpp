@@ -9,38 +9,33 @@
 
 struct Raw2Dng
 {
-    void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    static void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        converter.openRawFile(rawFilename);
-        converter.buildNegative(dcpFilename);
+        RawConverter converter(rawFilename, dcpFilename);
         // if (embedOriginal) converter.embedRaw(rawFilename);
         converter.renderImage();
         converter.renderPreviews();
         converter.writeDng(outFilename);
     }
 
-    void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    static void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        converter.openRawFile(rawFilename);
-        converter.buildNegative(dcpFilename);
+        RawConverter converter(rawFilename, dcpFilename);
         // if (embedOriginal) converter.embedRaw(rawFilename);
         converter.renderImage();
         converter.renderPreviews();
         converter.writeTiff(outFilename);
     }
 
-    void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
+    static void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        converter.openRawFile(rawFilename);
-        converter.buildNegative(dcpFilename);
+        RawConverter converter(rawFilename, dcpFilename);
         // if (embedOriginal) converter.embedRaw(rawFilename);
         converter.renderImage();
         converter.renderPreviews();
         converter.writeJpeg(outFilename);
     }
 
-private:
-    RawConverter converter;
 };
 
 int main(int argc, const char* argv []) {  
@@ -99,10 +94,9 @@ int main(int argc, const char* argv []) {
         std::time_t startTime = std::time(NULL);
 
         try {
-            Raw2Dng conv;
-            if (isJpeg)      conv.raw2jpeg(rawFilename, outFilename, dcpFilename);
-            else if (isTiff) conv.raw2tiff(rawFilename, outFilename, dcpFilename);
-            else             conv.raw2dng (rawFilename, outFilename, dcpFilename);
+            if (isJpeg)      Raw2Dng::raw2jpeg(rawFilename, outFilename, dcpFilename);
+            else if (isTiff) Raw2Dng::raw2tiff(rawFilename, outFilename, dcpFilename);
+            else             Raw2Dng::raw2dng (rawFilename, outFilename, dcpFilename);
         }
         catch (std::exception& e) {
             std::cerr << "--> Error! (" << e.what() << ")\n\n";

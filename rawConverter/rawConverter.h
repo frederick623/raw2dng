@@ -28,11 +28,10 @@ class NegativeProcessor;
 
 class RawConverter {
 public:
-   RawConverter();
+   RawConverter(const std::string& rawFilename);
+   RawConverter(const std::string& rawFilename, const std::string& dcpFilename);
    virtual ~RawConverter();
 
-   void openRawFile(const std::string& rawFilename);
-   void buildNegative(const std::string& dcpFilename);
    void embedRaw(const std::string& rawFilename);
    void renderImage();
    void renderPreviews();
@@ -43,7 +42,6 @@ public:
 
 private:
    std::unique_ptr<dng_date_time_info> m_dateTimeNow;
-   std::unique_ptr<dng_host> m_host;
    std::unique_ptr<NegativeProcessor> m_negProcessor;
    std::string m_appName, m_appVersion;
    dng_preview_list* m_previewList{nullptr};
