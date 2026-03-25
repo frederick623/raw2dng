@@ -40,7 +40,6 @@
 #include <exiv2/error.hpp>
 #include <exiv2/image.hpp>
 #include <exiv2/xmp_exiv2.hpp>
-#include <libraw/libraw.h>
 
 const char* getDngErrorMessage(int errorCode) {
     switch (errorCode) {
@@ -67,7 +66,7 @@ std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(dng_host&
     // -----------------------------------------------------------------------------------------
     // Open and parse rawfile with libraw...
 
-    LibRaw* rawProcessor(new LibRaw());
+    std::unique_ptr<LibRaw> rawProcessor(std::make_unique<LibRaw>());
 
     int ret = rawProcessor->open_file(filename);
     if (ret != LIBRAW_SUCCESS) {
@@ -100,32 +99,27 @@ std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(dng_host&
     // Identify and create correct processor class
 
     if (rawProcessor->imgdata.idata.dng_version != 0) {
-        try {return std::unique_ptr<DNGprocessor>(new DNGprocessor(host, rawProcessor, std::move(rawImage)));}
+        try {return std::unique_ptr<DNGprocessor>(new DNGprocessor(host, std::move(rawProcessor), std::move(rawImage)));}
         catch (dng_exception &e) {
             std::stringstream error; error << "Cannot parse source DNG-file (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
             throw std::runtime_error(error.str());
         }
     }
     else if (!strncmp(rawProcessor->imgdata.idata.model, "ILCE-7", 6))
-        return std::unique_ptr<ILCE7processor>(new ILCE7processor(host, rawProcessor, std::move(rawImage)));
+        return std::unique_ptr<ILCE7processor>(new ILCE7processor(host, std::move(rawProcessor), std::move(rawImage)));
     else if (!strcmp(rawProcessor->imgdata.idata.make, "FUJIFILM"))
-        return std::unique_ptr<FujiProcessor>(new FujiProcessor(host, rawProcessor, std::move(rawImage)));
+        return std::unique_ptr<FujiProcessor>(new FujiProcessor(host, std::move(rawProcessor), std::move(rawImage)));
 
-    return std::unique_ptr<VariousVendorProcessor>(new VariousVendorProcessor(host, rawProcessor, std::move(rawImage)));
+    return std::unique_ptr<VariousVendorProcessor>(new VariousVendorProcessor(host, std::move(rawProcessor), std::move(rawImage)));
 }
 
 
-NegativeProcessor::NegativeProcessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                                   : m_RawProcessor(rawProcessor), m_RawImage(std::move(rawImage)),
+NegativeProcessor::NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
+                                   : m_RawProcessor(std::move(rawProcessor)), m_RawImage(std::move(rawImage)),
                                      m_RawExif(m_RawImage->exifData()), m_RawXmp(m_RawImage->xmpData()),
                                      m_host(host), m_negative(m_host.Make_dng_negative()) 
 {
     
-}
-
-
-NegativeProcessor::~NegativeProcessor() {
-	m_RawProcessor->recycle();
 }
 
 

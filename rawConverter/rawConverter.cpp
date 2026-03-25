@@ -42,16 +42,6 @@
 
 #include "util.hpp"
 
-
-dng_file_stream* openFileStream(const std::string& outFilename) {
-    try {return new dng_file_stream(outFilename.c_str(), true);}
-    catch (dng_exception& e) {
-        std::stringstream error; error << "Error opening output file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
-        throw std::runtime_error(error.str());
-    }
-}
-
-
 RawConverter::RawConverter() 
 : m_appName("raw2dng")
 , m_appVersion(RAW2DNG_VERSION_STR)
@@ -98,7 +88,7 @@ void RawConverter::buildNegative(const std::string& dcpFilename) {
     m_negProcessor->setExifFromRaw(*m_dateTimeNow, appNameVersion);
     m_negProcessor->setXmpFromRaw(*m_dateTimeNow, appNameVersion);
 
-    m_negProcessor->getNegative()->RebuildIPTC(true);
+    m_negProcessor->rebuildIPTC(true);
 
     m_negProcessor->backupProprietaryData();
 
@@ -120,11 +110,7 @@ void RawConverter::renderImage() {
     // Render image
 
     try {
-
-        m_negProcessor->getNegative()->BuildStage2Image(*m_host);   // Compute linearized and range-mapped image
-
-
-        m_negProcessor->getNegative()->BuildStage3Image(*m_host);   // Compute demosaiced image (used by preview and thumbnail)
+        m_negProcessor->renderImage();
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while rendering image from raw! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -138,7 +124,7 @@ void RawConverter::renderPreviews() {
     // Render JPEG and thumbnail previews
 
     m_previewList = new dng_preview_list();
-    dng_render negRender(*m_host, *m_negProcessor->getNegative());
+    dng_render negRender(m_negProcessor->getDngRender());
 
 
     dng_jpeg_preview *jpeg_preview = new dng_jpeg_preview();
@@ -171,11 +157,9 @@ void RawConverter::writeDng(const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Write DNG-image to file
 
-
-    AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
-
     try {
-        dng_image_writer dngWriter; dngWriter.WriteDNG(*m_host, *targetFile, *m_negProcessor->getNegative(), m_previewList);
+        auto targetFile = dng_file_stream(outFilename.c_str(), true);
+        dng_image_writer().WriteDNG(*m_host, targetFile, m_negProcessor->getNegative(), m_previewList);
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing DNG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -189,19 +173,16 @@ void RawConverter::writeTiff(const std::string& outFilename) {
     // Render TIFF
 
 
-    dng_render negRender(*m_host, *m_negProcessor->getNegative());
-    AutoPtr<dng_image> negImage(negRender.Render());
+    dng_render negRender(m_negProcessor->getDngRender());
+    dng_image negImage(*negRender.Render());
 
     // -----------------------------------------------------------------------------------------
     // Write Tiff-image to file
 
-    AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
-
-
     try {
-        dng_image_writer tiffWriter; 
-        tiffWriter.WriteTIFF(*m_host, *targetFile, *negImage.Get(), piRGB, ccUncompressed,
-                             &m_negProcessor->getNegative()->Metadata(), &dng_space_sRGB::Get(), NULL,
+        auto targetFile = dng_file_stream(outFilename.c_str(), true);
+        dng_image_writer().WriteTIFF(*m_host, targetFile, negImage, piRGB, ccUncompressed,
+                             &m_negProcessor->getDngMetadata(), &dng_space_sRGB::Get(), NULL,
                              dynamic_cast<const dng_jpeg_preview*>(&m_previewList->Preview(1)));
     }
     catch (dng_exception& e) {
@@ -218,22 +199,19 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
     // FIXME: we should render and integrate a thumbnail too
 
 
-    dng_render negRender(*m_host, *m_negProcessor->getNegative());
-    AutoPtr<dng_image> negImage(negRender.Render());
+    dng_render negRender(m_negProcessor->getDngRender());
+    dng_image negImage(*negRender.Render());
 
-    AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
-    jpeg->fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
-    jpeg->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
-    jpeg->fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
-    jpeg->fInfo.fColorSpace = previewColorSpace_sRGB;
+    dng_jpeg_preview jpeg;
+    jpeg.fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
+    jpeg.fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
+    jpeg.fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
+    jpeg.fInfo.fColorSpace = previewColorSpace_sRGB;
 
-    dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(*m_host, *negImage.Get(), *jpeg.Get(), 8);
+    dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(*m_host, negImage, jpeg, 8);
 
     // -----------------------------------------------------------------------------------------
     // Write JPEG-image to file
-
-
-    AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
 
     const uint8 soiTag[]         = {0xff, 0xd8};
     const uint8 app1Tag[]        = {0xff, 0xe1};
@@ -258,8 +236,9 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
     try {
         // -----------------------------------------------------------------------------------------
         // Build IFD0, ExifIFD, GPSIFD
+        auto targetFile = dng_file_stream(outFilename.c_str(), true);
 
-        dng_metadata* metadata = &m_negProcessor->getNegative()->Metadata();
+        dng_metadata* metadata = &m_negProcessor->getDngMetadata();
         metadata->GetXMP()->Set(XMP_NS_DC, "format", "image/jpeg");
 
         dng_tiff_directory mainIfd;
@@ -283,20 +262,20 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
         // Build IFD0, ExifIFD, GPSIFD
 
         // Write SOI-tag
-        targetFile->Put(soiTag, sizeof(soiTag));
+        targetFile.Put(soiTag, sizeof(soiTag));
 
         // Write APP1-Exif section: Header...
-        targetFile->Put(app1Tag, sizeof(app1Tag));
-        targetFile->SetBigEndian(true);
-        targetFile->Put_uint16(sizeof(uint16) + exifHeaderLength + sizeof(tiffHeader) + mainIfd.Size() + exifSet.Size());
-        targetFile->Put(app1ExifHeader, exifHeaderLength);
+        targetFile.Put(app1Tag, sizeof(app1Tag));
+        targetFile.SetBigEndian(true);
+        targetFile.Put_uint16(sizeof(uint16) + exifHeaderLength + sizeof(tiffHeader) + mainIfd.Size() + exifSet.Size());
+        targetFile.Put(app1ExifHeader, exifHeaderLength);
 
         // ...and TIFF structure
-        targetFile->SetLittleEndian(true);
-        targetFile->Put(tiffHeader, sizeof(tiffHeader));
-        mainIfd.Put(*targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader));
-        exifSet.getExifIfd()->Put(*targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size());
-        exifSet.getGpsIfd()->Put(*targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size() + exifSet.getExifIfd()->Size());
+        targetFile.SetLittleEndian(true);
+        targetFile.Put(tiffHeader, sizeof(tiffHeader));
+        mainIfd.Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader));
+        exifSet.getExifIfd()->Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size());
+        exifSet.getGpsIfd()->Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size() + exifSet.getExifIfd()->Size());
 
         // Write APP1-XMP if required
         if (metadata->GetXMP()) {
@@ -304,29 +283,29 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
             dng_string extDigest;
             metadata->GetXMP()->PackageForJPEG(stdBlock, extBlock, extDigest);
 
-            targetFile->Put(app1Tag, sizeof(app1Tag));
-            targetFile->SetBigEndian(true);
-            targetFile->Put_uint16(sizeof(uint16) + xmpHeaderLength + stdBlock->LogicalSize());
-            targetFile->Put(app1XmpHeader, xmpHeaderLength);
-            targetFile->Put(stdBlock->Buffer(), stdBlock->LogicalSize());
+            targetFile.Put(app1Tag, sizeof(app1Tag));
+            targetFile.SetBigEndian(true);
+            targetFile.Put_uint16(sizeof(uint16) + xmpHeaderLength + stdBlock->LogicalSize());
+            targetFile.Put(app1XmpHeader, xmpHeaderLength);
+            targetFile.Put(stdBlock->Buffer(), stdBlock->LogicalSize());
 
             if (extBlock.Get()) {
                 // we only support one extended block, if XMP is >128k the file will probably be corrupted
-                targetFile->Put(app1Tag, sizeof(app1Tag));
-                targetFile->SetBigEndian(true);
-                targetFile->Put_uint16(sizeof(uint16) + extXmpHeaderLength + extDigest.Length() + sizeof(uint32) + sizeof(uint32) + extBlock->LogicalSize());
-                targetFile->Put(app1ExtXmpHeader, extXmpHeaderLength);
-                targetFile->Put(extDigest.Get(), extDigest.Length());
-                targetFile->Put_uint32(extBlock->LogicalSize());
-                targetFile->Put_uint32(stdBlock->LogicalSize());
-                targetFile->Put(extBlock->Buffer(), extBlock->LogicalSize());
+                targetFile.Put(app1Tag, sizeof(app1Tag));
+                targetFile.SetBigEndian(true);
+                targetFile.Put_uint16(sizeof(uint16) + extXmpHeaderLength + extDigest.Length() + sizeof(uint32) + sizeof(uint32) + extBlock->LogicalSize());
+                targetFile.Put(app1ExtXmpHeader, extXmpHeaderLength);
+                targetFile.Put(extDigest.Get(), extDigest.Length());
+                targetFile.Put_uint32(extBlock->LogicalSize());
+                targetFile.Put_uint32(stdBlock->LogicalSize());
+                targetFile.Put(extBlock->Buffer(), extBlock->LogicalSize());
             }
         }
 
         // write remaining JPEG structure/data from libjpeg minus the JFIF-header
-        targetFile->Put((uint8*) jpeg->CompressedData().Buffer() + jfifHeaderLength, jpeg->CompressedData().LogicalSize() - jfifHeaderLength);
+        targetFile.Put((uint8*) jpeg.CompressedData().Buffer() + jfifHeaderLength, jpeg.CompressedData().LogicalSize() - jfifHeaderLength);
 
-        targetFile->Flush();
+        targetFile.Flush();
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing JPEG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";

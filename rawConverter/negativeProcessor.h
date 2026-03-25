@@ -22,21 +22,21 @@
 
 #include <dng_host.h>
 #include <dng_negative.h>
+#include <dng_render.h>
 #include <dng_exif.h>
 #include <exiv2/image.hpp>
-
-class LibRaw;
+#include <libraw/libraw.h>
 
 const char* getDngErrorMessage(int errorCode);
 
 class NegativeProcessor {
 public:
-   NegativeProcessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
 
    static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename);
-   virtual ~NegativeProcessor();
+   virtual ~NegativeProcessor() = default;
 
-   dng_negative* getNegative() {return m_negative;}
+   dng_negative& getNegative() { return *m_negative; }
 
    // Different raw/DNG processing stages - usually called in this sequence
    virtual void setDNGPropertiesFromRaw();
@@ -46,6 +46,14 @@ public:
    virtual void backupProprietaryData();
    virtual void buildDNGImage();
    virtual void embedOriginalRaw(const char *rawFilename);
+
+   inline void rebuildIPTC(bool flag) { m_negative->RebuildIPTC(flag); }
+   inline dng_metadata& getDngMetadata() { return m_negative->Metadata(); }
+   inline dng_render getDngRender() { return dng_render(m_host, *m_negative); }
+   void renderImage() { 
+      m_negative->BuildStage2Image(m_host);  // Compute linearized and range-mapped image
+      m_negative->BuildStage3Image(m_host);  // Compute demosaiced image (used by preview and thumbnail)
+   }
 
 protected:
    virtual dng_memory_stream* createDNGPrivateTag();
@@ -66,12 +74,12 @@ protected:
    bool getRawExifTag(const char* exifTagName, long* size, unsigned char** data);
 
    // Source: Raw-file
-   AutoPtr<LibRaw> m_RawProcessor;
+   std::unique_ptr<LibRaw> m_RawProcessor;
    Exiv2::Image::UniquePtr m_RawImage;
    Exiv2::ExifData m_RawExif;
    Exiv2::XmpData m_RawXmp;
 
    // Target: DNG-file
    dng_host& m_host;
-   dng_negative* m_negative;
+   std::unique_ptr<dng_negative> m_negative;
 };

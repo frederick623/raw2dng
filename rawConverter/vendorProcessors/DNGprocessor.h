@@ -33,5 +33,5 @@ public:
    void buildDNGImage();
 
 protected:
-   DNGprocessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   DNGprocessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
 };

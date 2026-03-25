@@ -29,8 +29,8 @@
 #include "variousVendorProcessor.h"
 
 
-VariousVendorProcessor::VariousVendorProcessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                                             : NegativeProcessor(host, rawProcessor, std::move(rawImage)) {}
+VariousVendorProcessor::VariousVendorProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
+                                             : NegativeProcessor(host, std::move(rawProcessor), std::move(rawImage)) {}
 
 
 void setString(uint32 inInt, dng_string *outString) {

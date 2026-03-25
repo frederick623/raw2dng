@@ -29,5 +29,5 @@ public:
    void setExifFromRaw(const dng_date_time_info &dateTimeNow, const dng_string &appNameVersion);
 
 protected:
-   VariousVendorProcessor(dng_host& host, LibRaw *rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   VariousVendorProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
 };
