@@ -973,15 +973,13 @@ dng_basic_tag_set * dng_depth_preview::AddTagSet (dng_host & /* host */,
 
 /*****************************************************************************/
 
-void dng_preview_list::Append (AutoPtr<dng_preview> &preview)
+void dng_preview_list::Append (std::shared_ptr<dng_preview> preview)
 	{
 	
-	if (preview.Get ())
+	if (preview)
 		{
 		
-		std::shared_ptr<const dng_preview> entry (preview.Release ());
-		
-		fPreview.push_back (entry);
+		fPreview.push_back (preview);
 		
 		}
 	

@@ -20,12 +20,17 @@
 #pragma once
 
 #include "dng_host.h"
+#include "dng_xmp_sdk.h"
 
 class DngHost : public dng_host {
 public:
-    DngHost(dng_memory_allocator *allocator = NULL, dng_abort_sniffer *sniffer = NULL) {}
-    ~DngHost(void) {}
+    DngHost(dng_memory_allocator *allocator=nullptr, dng_abort_sniffer *sniffer=nullptr) {
+        dng_xmp_sdk::InitializeSDK();
+    }
+    ~DngHost() {
+        dng_xmp_sdk::TerminateSDK();
+    }
 
 public:
-    virtual void PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress = NULL);
+    void PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress = NULL) override;
 };

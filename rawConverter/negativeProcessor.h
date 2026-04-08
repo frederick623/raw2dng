@@ -20,25 +20,30 @@
 
 #include <memory>
 
+#include "config.h"
+#include <dng_image_writer.h>
+#include <dng_date_time.h>
 #include <dng_negative.h>
 #include <dng_render.h>
 #include <dng_exif.h>
+#include <dng_host.h>
+#include <dng_preview.h>
 #include <exiv2/image.hpp>
 #include <libraw/libraw.h>
 
-#include "dnghost.h"
 
 const char* getDngErrorMessage(int errorCode);
 
 class NegativeProcessor {
 public:
-   NegativeProcessor(std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
 
-   static std::unique_ptr<NegativeProcessor> createProcessor(const char *filename);
-   virtual ~NegativeProcessor() = default;
+   static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename);
+   virtual ~NegativeProcessor();
+   bool operator==(const NegativeProcessor& other) const;
 
+   dng_preview_list* getPreview() { return m_previewList; }
    dng_negative& getNegative() { return *m_negative; }
-   DngHost& getHost() { return m_host; }
 
    // Different raw/DNG processing stages - usually called in this sequence
    virtual void setDNGPropertiesFromRaw();
@@ -52,6 +57,9 @@ public:
    inline void rebuildIPTC(bool flag) { m_negative->RebuildIPTC(flag); }
    inline dng_metadata& getDngMetadata() { return m_negative->Metadata(); }
    inline dng_render getDngRender() { return dng_render(m_host, *m_negative); }
+   std::shared_ptr<dng_jpeg_preview> getJpegPreview();
+
+   void renderPreviews();
    void renderImage() { 
       m_negative->BuildStage2Image(m_host);  // Compute linearized and range-mapped image
       m_negative->BuildStage3Image(m_host);  // Compute demosaiced image (used by preview and thumbnail)
@@ -82,6 +90,10 @@ protected:
    Exiv2::XmpData m_RawXmp;
 
    // Target: DNG-file
-   DngHost m_host;
+   dng_date_time_info m_dateTimeNow;
+   dng_host& m_host;
+   dng_preview_list* m_previewList{nullptr};
    std::unique_ptr<dng_negative> m_negative;
+   std::string m_appName{"raw2dng"};
+   std::string m_appVersion{RAW2DNG_VERSION_STR};
 };

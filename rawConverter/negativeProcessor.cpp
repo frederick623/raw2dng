@@ -20,6 +20,7 @@
    Mueller (tschensinger at gmx dot de)
 */
 
+#include "config.h"
 #include "negativeProcessor.h"
 #include "vendorProcessors/DNGprocessor.h"
 #include "vendorProcessors/ILCE7processor.h"
@@ -29,11 +30,13 @@
 #include <stdexcept>
 #include <iostream>
 
+#include <dng_date_time.h>
 #include <dng_simple_image.h>
 #include <dng_camera_profile.h>
 #include <dng_file_stream.h>
 #include <dng_memory_stream.h>
 #include <dng_xmp.h>
+#include <dng_image_writer.h>
 
 #include <zlib.h>
 
@@ -62,7 +65,54 @@ const char* getDngErrorMessage(int errorCode) {
 }
 
 
-std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(const char *filename) {
+NegativeProcessor::~NegativeProcessor()
+{
+    if (m_previewList) delete m_previewList;
+}
+
+bool NegativeProcessor::operator==(const NegativeProcessor& candidate) const
+{
+    const dng_image *refImage = m_negative->Stage1Image();
+    const dng_image *candImage = candidate.m_negative->Stage1Image();
+
+    if (refImage->Bounds() != candImage->Bounds()) {
+        return false;
+    }
+    if (refImage->Planes() != candImage->Planes()) {
+        return false;
+    }
+    if (refImage->PixelType() != candImage->PixelType()) {
+        return false;
+    }
+    if (m_negative->ColorChannels() != candidate.m_negative->ColorChannels()) {
+        return false;
+    }
+
+    for (uint32 plane = 0; plane < refImage->Planes(); ++plane) {
+        if (m_negative->WhiteLevel(plane) != candidate.m_negative->WhiteLevel(plane)) {
+            return false;
+        }
+    }
+
+    const dng_mosaic_info *refMosaic = m_negative->GetMosaicInfo();
+    const dng_mosaic_info *candMosaic = candidate.m_negative->GetMosaicInfo();
+    if ((refMosaic == nullptr) != (candMosaic == nullptr)) {
+        return false;
+    }
+    if (refMosaic && candMosaic) {
+        if (refMosaic->fCFAPatternSize != candMosaic->fCFAPatternSize ||
+            refMosaic->fColorPlanes != candMosaic->fColorPlanes ||
+            refMosaic->fCFALayout != candMosaic->fCFALayout ||
+            std::memcmp(refMosaic->fCFAPattern, candMosaic->fCFAPattern, sizeof(refMosaic->fCFAPattern)) != 0 ||
+            std::memcmp(refMosaic->fCFAPlaneColor, candMosaic->fCFAPlaneColor, sizeof(refMosaic->fCFAPlaneColor)) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(dng_host& host, const char *filename) {
     // -----------------------------------------------------------------------------------------
     // Open and parse rawfile with libraw...
 
@@ -99,31 +149,37 @@ std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(const cha
     // Identify and create correct processor class
 
     if (rawProcessor->imgdata.idata.dng_version != 0) {
-        try {return std::unique_ptr<DNGprocessor>(new DNGprocessor(std::move(rawProcessor), std::move(rawImage)));}
+        try {return std::unique_ptr<DNGprocessor>(new DNGprocessor(host, std::move(rawProcessor), std::move(rawImage)));}
         catch (dng_exception &e) {
             std::stringstream error; error << "Cannot parse source DNG-file (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
             throw std::runtime_error(error.str());
         }
     }
     else if (!strncmp(rawProcessor->imgdata.idata.model, "ILCE-7", 6))
-        return std::unique_ptr<ILCE7processor>(new ILCE7processor(std::move(rawProcessor), std::move(rawImage)));
+        return std::unique_ptr<ILCE7processor>(new ILCE7processor(host, std::move(rawProcessor), std::move(rawImage)));
     else if (!strcmp(rawProcessor->imgdata.idata.make, "FUJIFILM"))
-        return std::unique_ptr<FujiProcessor>(new FujiProcessor(std::move(rawProcessor), std::move(rawImage)));
+        return std::unique_ptr<FujiProcessor>(new FujiProcessor(host, std::move(rawProcessor), std::move(rawImage)));
 
-    return std::unique_ptr<VariousVendorProcessor>(new VariousVendorProcessor(std::move(rawProcessor), std::move(rawImage)));
+    return std::unique_ptr<VariousVendorProcessor>(new VariousVendorProcessor(host, std::move(rawProcessor), std::move(rawImage)));
 }
 
 
-NegativeProcessor::NegativeProcessor(std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                                   : m_RawProcessor(std::move(rawProcessor)), m_RawImage(std::move(rawImage)),
-                                     m_RawExif(m_RawImage->exifData()), m_RawXmp(m_RawImage->xmpData() ) 
+NegativeProcessor::NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
+                                    : m_RawProcessor(std::move(rawProcessor))
+                                    , m_RawImage(std::move(rawImage))
+                                    , m_RawExif(m_RawImage->exifData())
+                                    , m_RawXmp(m_RawImage->xmpData() )
+                                    , m_host(host)
 {
-    
-    m_host.SetSaveDNGVersion(dngVersion_SaveDefault);
-    m_host.SetSaveLinearDNG(false);
-    m_host.SetKeepOriginalFile(true);
     m_negative = std::unique_ptr<dng_negative>(m_host.Make_dng_negative());
+    setDNGPropertiesFromRaw();
 
+    dng_string appNameVersion((m_appName+m_appVersion).c_str()); 
+    CurrentDateTimeAndZone(m_dateTimeNow);
+    setExifFromRaw(m_dateTimeNow, appNameVersion);
+    setXmpFromRaw(m_dateTimeNow, appNameVersion);
+    rebuildIPTC(true);
+    backupProprietaryData();
 }
 
 
@@ -139,6 +195,36 @@ ColorKeyCode colorKey(const char color) {
         case 'T':                      // what is 'T'??? LibRaw reports that only for the Leaf Catchlight, so I guess we're not compatible with early '90s tech...
         default:  return colorKeyMaxEnum;
     }
+}
+
+
+std::shared_ptr<dng_jpeg_preview> NegativeProcessor::getJpegPreview() {
+    auto jpeg_preview = std::make_shared<dng_jpeg_preview>();
+    jpeg_preview->fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
+    jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
+    jpeg_preview->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
+    jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
+    return jpeg_preview;
+}
+
+
+void NegativeProcessor::renderPreviews() {
+    // -----------------------------------------------------------------------------------------
+    // Render JPEG and thumbnail previews
+
+    m_previewList = new dng_preview_list();
+    dng_render negRender(getDngRender());
+
+    auto jpeg_preview = getJpegPreview();
+    negRender.SetMaximumSize(1024);
+    std::unique_ptr<dng_image> negImage(negRender.Render());
+    dng_image_writer().EncodeJPEGPreview(m_host, *negImage, *jpeg_preview, 5);
+    m_previewList->Append(jpeg_preview);
+
+    auto thumbnail = getJpegPreview();
+    negRender.SetMaximumSize(256);
+    thumbnail->SetImage(m_host, negRender.Render());
+    m_previewList->Append(std::shared_ptr<dng_preview>(thumbnail));
 }
 
 
@@ -630,7 +716,7 @@ void NegativeProcessor::embedOriginalRaw(const char *rawFilename) {
     rawDataStream.SetReadPosition(0);
 
     uint32 rawFileSize = static_cast<uint32>(rawDataStream.Length());
-    uint32 numberRawBlocks = static_cast<uint32>(floor((rawFileSize + 65535.0) / 65536.0));
+    uint32 numberRawBlocks = static_cast<uint32>(floor((rawFileSize + (BLOCKSIZE-1)) / BLOCKSIZE));
 
     dng_memory_stream embeddedRawStream(m_host.Allocator());
     embeddedRawStream.SetBigEndian(true);

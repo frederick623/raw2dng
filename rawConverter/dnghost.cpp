@@ -26,14 +26,6 @@
 #include "dng_area_task.h"
 #include "dng_rect.h"
 
-#if !kLocalUseThreads
-
-void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress) { 
-   dng_area_task::Perform(task, area, &Allocator (), Sniffer (), progress);
-}
-
-#else 
-
 #include <thread>
 #include <vector>
 #include <exception>
@@ -90,5 +82,3 @@ void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_are
 
    task.Finish(Min_uint32(task.MaxThreads(), kMaxMPThreads));
 }
-
-#endif

@@ -161,8 +161,8 @@ public:
 };
 
 
-ILCE7processor::ILCE7processor(std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                             : NegativeProcessor(std::move(rawProcessor), std::move(rawImage)) {}
+ILCE7processor::ILCE7processor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
+                             : NegativeProcessor(host, std::move(rawProcessor), std::move(rawImage)) {}
 
 
 void ILCE7processor::setDNGPropertiesFromRaw() {

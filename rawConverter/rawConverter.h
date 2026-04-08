@@ -20,30 +20,25 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-class dng_date_time_info;
-class dng_host;
-class dng_preview_list;
-class NegativeProcessor;
+#include "dnghost.h"
+#include "negativeProcessor.h"
 
 class RawConverter {
 public:
-   RawConverter(const std::string& rawFilename);
-   RawConverter(const std::string& rawFilename, const std::string& dcpFilename);
-   virtual ~RawConverter();
 
-   void embedRaw(const std::string& rawFilename);
-   void renderImage();
-   void renderPreviews();
+   RawConverter(const std::vector<std::string>& rawFilenames, const std::string& dcpFilename);
+   virtual ~RawConverter() = default;
 
-   void writeDng (const std::string& outFilename);
-   void writeTiff(const std::string& outFilename);
-   void writeJpeg(const std::string& outFilename);
+   std::string merge(const std::unordered_map<std::string, double>& inputs);
+   static void updateMetadata(dng_negative &negative, dng_host &host, std::size_t inputCount);
+   void writeDng (const std::string inFilename, const std::string& outFilename);
+   void writeTiff(const std::string inFilename, const std::string& outFilename);
+   void writeJpeg(const std::string inFilename, const std::string& outFilename);
 
 private:
-   std::unique_ptr<dng_date_time_info> m_dateTimeNow;
-   std::unique_ptr<NegativeProcessor> m_negProcessor;
-   std::string m_appName, m_appVersion;
-   dng_preview_list* m_previewList{nullptr};
+   std::unordered_map<std::string, std::unique_ptr<NegativeProcessor>> m_negProcessors;
+   DngHost m_host;
 
 };

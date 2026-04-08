@@ -16,20 +16,18 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "config.h"
 #include "rawConverter.h"
 
+#include <algorithm>
 #include <stdexcept>
 
-#include "dng_date_time.h"
 #include "dng_negative.h"
 #include "dng_image_writer.h"
 #include "dng_preview.h"
-#include "dng_xmp_sdk.h"
 #include "dng_memory_stream.h"
 #include "dng_file_stream.h"
 #include "dng_render.h"
-#include "dng_image_writer.h"
+#include "dng_simple_image.h"
 #include "dng_color_space.h"
 #include "dng_exceptions.h"
 #include "dng_tag_values.h"
@@ -41,104 +39,39 @@
 
 #include "util.hpp"
 
-RawConverter::RawConverter(const std::string& rawFilename) 
-: m_appName("raw2dng")
-, m_appVersion(RAW2DNG_VERSION_STR)
-, m_dateTimeNow(std::make_unique<dng_date_time_info>())
+RawConverter::RawConverter(const std::vector<std::string>& rawFilenames, const std::string& dcpFilename)
 {
     // -----------------------------------------------------------------------------------------
     // Init XMP SDK and some global variables we will need
 
-    dng_xmp_sdk::InitializeSDK();
-    CurrentDateTimeAndZone(*m_dateTimeNow);
-    m_negProcessor = NegativeProcessor::createProcessor(rawFilename.c_str());
-}
+    m_host.SetSaveDNGVersion(dngVersion_SaveDefault);
+    m_host.SetSaveLinearDNG(false);
+    m_host.SetKeepOriginalFile(true);
 
-RawConverter::RawConverter(const std::string& rawFilename, const std::string& dcpFilename)
-: RawConverter(rawFilename)
-{
-
-    m_negProcessor->setDNGPropertiesFromRaw();
-    m_negProcessor->setCameraProfile(dcpFilename.c_str());
-
-    dng_string appNameVersion(m_appName.c_str()); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.c_str());
-    m_negProcessor->setExifFromRaw(*m_dateTimeNow, appNameVersion);
-    m_negProcessor->setXmpFromRaw(*m_dateTimeNow, appNameVersion);
-
-    m_negProcessor->rebuildIPTC(true);
-
-    m_negProcessor->backupProprietaryData();
-
-    // -----------------------------------------------------------------------------------------
-    // Copy raw sensor data
-
-    m_negProcessor->buildDNGImage();
-}
-
-RawConverter::~RawConverter() {
-    dng_xmp_sdk::TerminateSDK();
-    if (m_previewList) delete m_previewList;
-}
-
-void RawConverter::embedRaw(const std::string& rawFilename) {
-    m_negProcessor->embedOriginalRaw(rawFilename.c_str());
-}
-
-
-void RawConverter::renderImage() {
-    // -----------------------------------------------------------------------------------------
-    // Render image
-
-    try {
-        m_negProcessor->renderImage();
-    }
-    catch (dng_exception& e) {
-        std::stringstream error; error << "Error while rendering image from raw! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
-        throw std::runtime_error(error.str());
+    for (const auto& rawFilename : rawFilenames)
+    {
+        auto pair = m_negProcessors.insert_or_assign(rawFilename
+            , NegativeProcessor::createProcessor(m_host, rawFilename.c_str()));
+        pair.first->second->setCameraProfile(dcpFilename.c_str());
+        // -----------------------------------------------------------------------------------------
+        // Copy raw sensor data
+        pair.first->second->buildDNGImage();
+        pair.first->second->renderImage();
+        pair.first->second->renderPreviews();
     }
 }
 
 
-void RawConverter::renderPreviews() {
-    // -----------------------------------------------------------------------------------------
-    // Render JPEG and thumbnail previews
-
-    m_previewList = new dng_preview_list();
-    dng_render negRender(m_negProcessor->getDngRender());
-
-
-    dng_jpeg_preview *jpeg_preview = new dng_jpeg_preview();
-    jpeg_preview->fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
-    jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
-    jpeg_preview->fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
-    jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
-
-    negRender.SetMaximumSize(1024);
-    std::unique_ptr<dng_image> negImage(negRender.Render());
-    dng_image_writer().EncodeJPEGPreview(m_negProcessor->getHost(), *negImage, *jpeg_preview, 5);
-    AutoPtr<dng_preview> jp(jpeg_preview);
-    m_previewList->Append(jp);
-
-    dng_image_preview *thumbnail = new dng_image_preview();
-    thumbnail->fInfo.fApplicationName    = jpeg_preview->fInfo.fApplicationName;
-    thumbnail->fInfo.fApplicationVersion = jpeg_preview->fInfo.fApplicationVersion;
-    thumbnail->fInfo.fDateTime           = jpeg_preview->fInfo.fDateTime;
-    thumbnail->fInfo.fColorSpace         = jpeg_preview->fInfo.fColorSpace;
-
-    negRender.SetMaximumSize(256);
-    thumbnail->SetImage(m_negProcessor->getHost(), negRender.Render());
-    AutoPtr<dng_preview> tn(thumbnail);
-    m_previewList->Append(tn);
-}
-
-
-void RawConverter::writeDng(const std::string& outFilename) {
+void RawConverter::writeDng(const std::string inFilename, const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Write DNG-image to file
 
     try {
+        if (!m_negProcessors.contains(inFilename)) return;
+
+        auto& m_negProcessor = m_negProcessors[inFilename];
         auto targetFile = dng_file_stream(outFilename.c_str(), true);
-        dng_image_writer().WriteDNG(m_negProcessor->getHost(), targetFile, m_negProcessor->getNegative(), m_previewList);
+        dng_image_writer().WriteDNG(m_host, targetFile, m_negProcessor->getNegative(), m_negProcessor->getPreview());
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing DNG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -146,24 +79,82 @@ void RawConverter::writeDng(const std::string& outFilename) {
     }
 }
 
+std::string RawConverter::merge(const std::unordered_map<std::string, double>& inputs)
+{
+    if (m_negProcessors.size()<=1 or m_negProcessors.size()!=inputs.size() or 
+        std::any_of(std::next(m_negProcessors.begin()), m_negProcessors.end(), [&](const auto& pair){
+            return m_negProcessors.begin()->second!=pair.second;
+        }))
+        return "";
 
-void RawConverter::writeTiff(const std::string& outFilename) {
-    // -----------------------------------------------------------------------------------------
-    // Render TIFF
+    const dng_image *reference = m_negProcessors.begin()->second->getNegative().Stage1Image();
+    const dng_rect bounds = reference->Bounds();
+    const uint32 planes = reference->Planes();
+
+    auto *mergedImage = new dng_simple_image(bounds, planes, ttShort, m_host.Allocator());
+    dng_pixel_buffer mergedBuffer;
+    mergedImage->GetPixelBuffer(mergedBuffer);
+
+    auto width = bounds.W();
+    const auto samplesPerRow = width * planes;
+    std::vector<uint32_t> accumulator(samplesPerRow);
+
+    for (int32 row = bounds.t; row < bounds.b; ++row) {
+        std::fill(accumulator.begin(), accumulator.end(), 0U);
+
+        for (const auto &input : inputs) {
+            auto& negative = m_negProcessors[input.first]->getNegative();
+            auto image = negative.Stage1Image();
+            dng_pixel_buffer sourceBuffer;
+            dynamic_cast<const dng_simple_image*>(image)->GetPixelBuffer(sourceBuffer);
+            const uint16 *source = sourceBuffer.ConstPixel_uint16(row, bounds.l);
+            const double gain = std::exp2(input.second);
+
+            for (uint32 col = 0; col < width; ++col) {
+                for (uint32 plane = 0; plane < planes; ++plane) {
+                    const uint32 sample = col * planes + plane;
+                    const double black = negative.RawImageBlackLevel();
+                    const double white = negative.WhiteLevel(plane);
+                    const double value = static_cast<double>(source[sample]);
+                    const double scaled = std::clamp((value - black) * gain + black, black, white);
+                    accumulator[sample] += static_cast<uint32_t>(std::lround(scaled));
+                }
+            }
+        }
+
+        uint16 *destination = mergedBuffer.DirtyPixel_uint16(row, bounds.l);
+        for (uint32 sample = 0; sample < samplesPerRow; ++sample) {
+            destination[sample] = static_cast<uint16>((accumulator[sample] + inputs.size() / 2) / inputs.size());
+        }
+    }
+
+    for (auto it=std::next(m_negProcessors.begin()); it!=m_negProcessors.end(); ++it)
+    {
+        
+    }
+
+    return m_negProcessors.begin()->first;
+}
 
 
-    dng_render negRender(m_negProcessor->getDngRender());
-    dng_image negImage(*negRender.Render());
-
+void RawConverter::writeTiff(const std::string inFilename, const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Write Tiff-image to file
-    if (!m_previewList) renderPreviews();
 
     try {
+        if (!m_negProcessors.contains(inFilename)) return;
+
+        auto& m_negProcessor = m_negProcessors[inFilename];
+        // -----------------------------------------------------------------------------------------
+        // Render TIFF
+
+        dng_render negRender(m_negProcessor->getDngRender());
+        std::unique_ptr<dng_image> negImage(negRender.Render());
+
         auto targetFile = dng_file_stream(outFilename.c_str(), true);
-        dng_image_writer().WriteTIFF(m_negProcessor->getHost(), targetFile, negImage, piRGB, ccUncompressed,
+        dng_image_writer().WriteTIFF(m_host, targetFile, *negImage, piRGB, ccUncompressed,
                              &m_negProcessor->getDngMetadata(), &dng_space_sRGB::Get(), NULL,
-                             dynamic_cast<const dng_jpeg_preview*>(&m_previewList->Preview(1)));
+                             dynamic_cast<const dng_jpeg_preview*>(&m_negProcessor->getPreview()->Preview(1)));
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing TIFF-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -171,24 +162,49 @@ void RawConverter::writeTiff(const std::string& outFilename) {
     }
 }
 
+void RawConverter::updateMetadata(dng_negative &negative, dng_host &host, std::size_t inputCount) {
+    dng_date_time_info now;
+    CurrentDateTimeAndZone(now);
+    negative.UpdateDateTime(now);
 
-void RawConverter::writeJpeg(const std::string& outFilename) {
+    if (dng_exif *exif = negative.GetExif()) {
+        exif->fSoftware.Set_ASCII("raw2dng dngmerge");
+        exif->fImageDescription.Set_ASCII(("Merged " + std::to_string(inputCount) + " DNG exposures").c_str());
+    }
+
+    if (dng_xmp *xmp = negative.GetXMP()) {
+        xmp->UpdateDateTime(now);
+        xmp->UpdateMetadataDate(now);
+        xmp->SetString(XMP_NS_XAP, "CreatorTool", "raw2dng dngmerge");
+        xmp->Set(XMP_NS_DC, "format", "image/dng");
+        xmp->SetString(XMP_NS_DC, "description", ("Merged " + std::to_string(inputCount) + " DNG exposures").c_str());
+    }
+
+    negative.SetOriginalRawFileName("merged.dng");
+    negative.SetHasOriginalRawFileData(false);
+    AutoPtr<dng_memory_block> emptyOriginal;
+    negative.SetOriginalRawFileData(emptyOriginal);
+    negative.ClearRawImageDigest();
+    negative.FindRawImageDigest(host);
+    negative.SynchronizeMetadata();
+}
+
+
+void RawConverter::writeJpeg(const std::string inFilename, const std::string& outFilename) {
     // -----------------------------------------------------------------------------------------
     // Render JPEG
 
     // FIXME: we should render and integrate a thumbnail too
 
+    if (!m_negProcessors.contains(inFilename)) return;
+
+    auto& m_negProcessor = m_negProcessors[inFilename];
 
     dng_render negRender(m_negProcessor->getDngRender());
-    dng_image negImage(*negRender.Render());
+    std::unique_ptr<dng_image> negImage(negRender.Render());
 
-    dng_jpeg_preview jpeg;
-    jpeg.fInfo.fApplicationName.Set_ASCII(m_appName.c_str());
-    jpeg.fInfo.fApplicationVersion.Set_ASCII(m_appVersion.c_str());
-    jpeg.fInfo.fDateTime = m_dateTimeNow->Encode_ISO_8601();
-    jpeg.fInfo.fColorSpace = previewColorSpace_sRGB;
-
-    dng_image_writer().EncodeJPEGPreview(m_negProcessor->getHost(), negImage, jpeg, 8);
+    auto jpeg = m_negProcessor->getJpegPreview();
+    dng_image_writer().EncodeJPEGPreview(m_host, *negImage, *jpeg, 8);
 
     // -----------------------------------------------------------------------------------------
     // Write JPEG-image to file
@@ -283,7 +299,7 @@ void RawConverter::writeJpeg(const std::string& outFilename) {
         }
 
         // write remaining JPEG structure/data from libjpeg minus the JFIF-header
-        targetFile.Put((uint8*) jpeg.CompressedData().Buffer() + jfifHeaderLength, jpeg.CompressedData().LogicalSize() - jfifHeaderLength);
+        targetFile.Put((uint8*) jpeg->CompressedData().Buffer() + jfifHeaderLength, jpeg->CompressedData().LogicalSize() - jfifHeaderLength);
 
         targetFile.Flush();
     }

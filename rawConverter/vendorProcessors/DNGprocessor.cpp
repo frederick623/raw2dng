@@ -28,8 +28,8 @@
 #include <exiv2/image.hpp>
 
 
-DNGprocessor::DNGprocessor(std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                             : NegativeProcessor(std::move(rawProcessor), std::move(rawImage)) {
+DNGprocessor::DNGprocessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
+                             : NegativeProcessor(host, std::move(rawProcessor), std::move(rawImage)) {
     // -----------------------------------------------------------------------------------------
     // Re-read source DNG using DNG SDK - we're ignoring the LibRaw/Exiv2 data structures from now on
 

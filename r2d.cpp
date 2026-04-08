@@ -11,29 +11,20 @@ struct Raw2Dng
 {
     static void raw2dng(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        RawConverter converter(rawFilename, dcpFilename);
-        // if (embedOriginal) converter.embedRaw(rawFilename);
-        converter.renderImage();
-        converter.renderPreviews();
-        converter.writeDng(outFilename);
+        RawConverter converter({rawFilename}, dcpFilename);
+        converter.writeDng(rawFilename, outFilename);
     }
 
     static void raw2tiff(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        RawConverter converter(rawFilename, dcpFilename);
-        // if (embedOriginal) converter.embedRaw(rawFilename);
-        converter.renderImage();
-        converter.renderPreviews();
-        converter.writeTiff(outFilename);
+        RawConverter converter({rawFilename}, dcpFilename);
+        converter.writeTiff(rawFilename, outFilename);
     }
 
     static void raw2jpeg(const std::string& rawFilename, const std::string& outFilename, const std::string& dcpFilename)
     {
-        RawConverter converter(rawFilename, dcpFilename);
-        // if (embedOriginal) converter.embedRaw(rawFilename);
-        converter.renderImage();
-        converter.renderPreviews();
-        converter.writeJpeg(outFilename);
+        RawConverter converter({rawFilename}, dcpFilename);
+        converter.writeJpeg(rawFilename, outFilename);
     }
 
 };
