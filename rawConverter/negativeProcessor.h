@@ -36,27 +36,18 @@ const char* getDngErrorMessage(int errorCode);
 
 class NegativeProcessor {
 public:
-   NegativeProcessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage);
+   NegativeProcessor(dng_host& host, std::unique_ptr<dng_negative> negative);
 
-   static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename);
+   static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename, const char* dcpFilename="");
    virtual ~NegativeProcessor();
    bool operator==(const NegativeProcessor& other) const;
 
    dng_preview_list* getPreview() { return m_previewList; }
    dng_negative& getNegative() { return *m_negative; }
 
-   // Different raw/DNG processing stages - usually called in this sequence
-   virtual void setDNGPropertiesFromRaw();
-   virtual void setCameraProfile(const char *dcpFilename);
-   virtual void setExifFromRaw(const dng_date_time_info &dateTimeNow, const dng_string &appNameVersion);
-   virtual void setXmpFromRaw(const dng_date_time_info &dateTimeNow, const dng_string &appNameVersion);
-   virtual void backupProprietaryData();
-   virtual void buildDNGImage();
-   virtual void embedOriginalRaw(const char *rawFilename);
-
    inline void rebuildIPTC(bool flag) { m_negative->RebuildIPTC(flag); }
    inline dng_metadata& getDngMetadata() { return m_negative->Metadata(); }
-   inline dng_render getDngRender() { return dng_render(m_host, *m_negative); }
+   inline dng_render getDngRender() { return {m_host, *m_negative}; }
    std::shared_ptr<dng_jpeg_preview> getJpegPreview();
 
    void renderPreviews();
@@ -66,23 +57,6 @@ public:
    }
 
 protected:
-   virtual dng_memory_stream* createDNGPrivateTag();
-
-   // helper functions
-   bool getInterpretedRawExifTag(const char* exifTagName, int32 component, uint32* value);
-
-   bool getRawExifTag(const char* exifTagName, dng_string* value);
-   bool getRawExifTag(const char* exifTagName, dng_date_time_info* value);
-   bool getRawExifTag(const char* exifTagName, int32 component, dng_srational* rational);
-   bool getRawExifTag(const char* exifTagName, int32 component, dng_urational* rational);
-   bool getRawExifTag(const char* exifTagName, int32 component, uint32* value);
-
-   int  getRawExifTag(const char* exifTagName, uint32* valueArray, int32 maxFill);
-   int  getRawExifTag(const char* exifTagName, int16* valueArray, int32 maxFill);
-   int  getRawExifTag(const char* exifTagName, dng_urational* valueArray, int32 maxFill);
-
-   bool getRawExifTag(const char* exifTagName, long* size, unsigned char** data);
-
    // Source: Raw-file
    std::unique_ptr<LibRaw> m_RawProcessor;
    Exiv2::Image::UniquePtr m_RawImage;

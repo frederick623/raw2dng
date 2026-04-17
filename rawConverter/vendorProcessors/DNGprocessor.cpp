@@ -1,20 +1,3 @@
-/* Copyright (C) 2015 Fimagena
-
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
-   License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-
-   This library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-
-   You should have received a copy of the GNU Library General Public License
-   along with this library; see the file COPYING.  If not, write to
-   the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.
-*/
 
 #include "DNGprocessor.h"
 
@@ -28,12 +11,20 @@
 #include <exiv2/image.hpp>
 
 
-DNGprocessor::DNGprocessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor, Exiv2::Image::UniquePtr rawImage)
-                             : NegativeProcessor(host, std::move(rawProcessor), std::move(rawImage)) {
-    // -----------------------------------------------------------------------------------------
-    // Re-read source DNG using DNG SDK - we're ignoring the LibRaw/Exiv2 data structures from now on
-
-    std::string file(m_RawImage->io().path());
+// ---------------------------------------------------------------------------
+// Constructor
+//
+// Invoked by BaseProcessor<DNGprocessor>::produce() after the base-class
+// BaseProcessor constructor has run (so m_negative already exists).
+// Re-reads the source DNG with the DNG SDK so m_negative is fully populated
+// before any pipeline step is called.
+// ---------------------------------------------------------------------------
+DNGprocessor::DNGprocessor(dng_host&                    host,
+                            std::unique_ptr<LibRaw>      rawProcessor,
+                            Exiv2::Image::UniquePtr      rawImage)
+    : BaseProcessor(host, std::move(rawProcessor), std::move(rawImage))
+{
+    const std::string file(m_RawImage->io().path());
 
     try {
         dng_file_stream stream(file.c_str());
@@ -49,68 +40,49 @@ DNGprocessor::DNGprocessor(dng_host& host, std::unique_ptr<LibRaw> rawProcessor,
         m_negative->ReadTransparencyMask(m_host, stream, info);
         m_negative->ValidateRawImageDigest(m_host);
     }
-    catch (const dng_exception &except) {throw except;}
-    catch (...) {throw dng_exception(dng_error_unknown);}
+    catch (const dng_exception&) { throw; }
+    catch (...) { throw dng_exception(dng_error_unknown); }
 }
 
 
-void DNGprocessor::setDNGPropertiesFromRaw() {
-    // -----------------------------------------------------------------------------------------
-    // Raw filename
+// ---------------------------------------------------------------------------
+// Pipeline step overrides
+// ---------------------------------------------------------------------------
 
+void DNGprocessor::setDNGPropertiesFromRaw() {
+    // The DNG SDK already populated m_negative completely.
+    // Only patch the original raw filename (cosmetic).
     std::string file(m_RawImage->io().path());
     size_t found = std::min(file.rfind("\\"), file.rfind("/"));
-    if (found != std::string::npos) file = file.substr(found + 1, file.length() - found - 1);
+    if (found != std::string::npos)
+        file = file.substr(found + 1, file.length() - found - 1);
     m_negative->SetOriginalRawFileName(file.c_str());
 }
 
+void DNGprocessor::setCameraProfile(const char* dcpFilename) {
+    if (strlen(dcpFilename) == 0) return;  // keep what's already in the DNG
 
-void DNGprocessor::setCameraProfile(const char *dcpFilename) {
     AutoPtr<dng_camera_profile> prof(new dng_camera_profile);
-
-    if (strlen(dcpFilename) > 0) {
-        dng_file_stream profStream(dcpFilename);
-        if (!prof->ParseExtended(profStream))
-            throw std::runtime_error("Could not parse supplied camera profile file!");
-        m_negative->AddProfile(prof);
-    }
-    else {
-        // -----------------------------------------------------------------------------------------
-        // Don't do anything, since we're using whatever's already in the DNG
-    }
+    dng_file_stream profStream(dcpFilename);
+    if (!prof->ParseExtended(profStream))
+        throw std::runtime_error("Could not parse supplied camera profile file!");
+    m_negative->AddProfile(prof);
 }
 
-
-void DNGprocessor::setExifFromRaw(const dng_date_time_info &dateTimeNow, const dng_string &appNameVersion) {
-    // -----------------------------------------------------------------------------------------
-    // We use whatever's in the source DNG and just update date and software
-
-    dng_exif *negExif = m_negative->GetExif();
+void DNGprocessor::setExifFromRaw(const dng_date_time_info& dateTimeNow,
+                                   const dng_string&         appNameVersion) {
+    dng_exif* negExif = m_negative->GetExif();
     negExif->fDateTime = dateTimeNow;
     negExif->fSoftware = appNameVersion;
 }
 
-
-void DNGprocessor::setXmpFromRaw(const dng_date_time_info &dateTimeNow, const dng_string &appNameVersion) {
-    // -----------------------------------------------------------------------------------------
-    // We use whatever's in the source DNG and just update some base tags
-
-    dng_xmp *negXmp = m_negative->GetXMP();
+void DNGprocessor::setXmpFromRaw(const dng_date_time_info& dateTimeNow,
+                                  const dng_string&         appNameVersion) {
+    dng_xmp* negXmp = m_negative->GetXMP();
     negXmp->UpdateDateTime(dateTimeNow);
     negXmp->UpdateMetadataDate(dateTimeNow);
     negXmp->SetString(XMP_NS_XAP, "CreatorTool", appNameVersion);
     negXmp->Set(XMP_NS_DC, "format", "image/dng");
-    negXmp->SetString(XMP_NS_PHOTOSHOP, "DateCreated", m_negative->GetExif()->fDateTimeOriginal.Encode_ISO_8601());
-}
-
-
-void DNGprocessor::backupProprietaryData() {
-    // -----------------------------------------------------------------------------------------
-    // No-op, we use whatever's in the source DNG
-}
-
-
-void DNGprocessor::buildDNGImage() {
-    // -----------------------------------------------------------------------------------------
-    // No-op, since we've already read the stage 1 image
+    negXmp->SetString(XMP_NS_PHOTOSHOP, "DateCreated",
+                      m_negative->GetExif()->fDateTimeOriginal.Encode_ISO_8601());
 }

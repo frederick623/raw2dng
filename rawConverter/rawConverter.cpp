@@ -37,8 +37,6 @@
 
 #include "negativeProcessor.h"
 
-#include "util.hpp"
-
 RawConverter::RawConverter(const std::vector<std::string>& rawFilenames, const std::string& dcpFilename)
 {
     // -----------------------------------------------------------------------------------------
@@ -51,11 +49,9 @@ RawConverter::RawConverter(const std::vector<std::string>& rawFilenames, const s
     for (const auto& rawFilename : rawFilenames)
     {
         auto pair = m_negProcessors.insert_or_assign(rawFilename
-            , NegativeProcessor::createProcessor(m_host, rawFilename.c_str()));
-        pair.first->second->setCameraProfile(dcpFilename.c_str());
+            , NegativeProcessor::createProcessor(m_host, rawFilename.c_str(), dcpFilename.c_str()));
         // -----------------------------------------------------------------------------------------
         // Copy raw sensor data
-        pair.first->second->buildDNGImage();
         pair.first->second->renderImage();
         pair.first->second->renderPreviews();
     }
