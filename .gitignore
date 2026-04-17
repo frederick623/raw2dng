@@ -84,4 +84,6 @@ bin/
 exiv2*
 *.pc
 
-
+.idea/
+.cmake/
+*.ninja*
