@@ -24,9 +24,9 @@ ADD_LIBRARY( rawConverter STATIC
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/FujiProcessor.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/vendorProcessors/variousVendorProcessor.cpp )
 
-TARGET_INCLUDE_DIRECTORIES( rawConverter PUBLIC
-                    ${CMAKE_CURRENT_SOURCE_DIR} 
-                    )
+TARGET_INCLUDE_DIRECTORIES( rawConverter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                         PUBLIC ${CMAKE_BINARY_DIR}
+)
 
 TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dngsdk exiv2lib raw ${ZLIB_LIBRARIES} )
 

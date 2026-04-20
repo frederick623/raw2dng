@@ -227,6 +227,8 @@ else()
     target_link_libraries( exiv2lib PRIVATE psapi ws2_32 shell32 )
 endif()
 
+target_sources(exiv2lib PRIVATE MD5.cpp ../include/exiv2/MD5.h)
+
 if( EXIV2_ENABLE_PNG )
     target_link_libraries( exiv2lib PRIVATE ZLIB::ZLIB)
     target_include_directories(exiv2lib_int PRIVATE ${ZLIB_INCLUDE_DIR})

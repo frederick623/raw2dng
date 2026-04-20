@@ -5,12 +5,6 @@ PROJECT( raw2dng )
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-execute_process( COMMAND bash deps.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULT_VARIABLE DEPS_RESULT )
-if(NOT DEPS_RESULT EQUAL 0) 
-    message(FATAL_ERROR "Failed to run deps.sh") 
-endif()
-
-
 set(CMAKE_CXX_STANDARD 20)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Release' as none was specified.")
@@ -34,37 +28,17 @@ SET(ENABLE_SHARED FALSE)
 SET(ENABLE_LCMS FALSE)
 SET(EXIV2_ENABLE_PNG FALSE)
 
-SET(JPEG_VERSION 210)
-set(JPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg)
-set(JPEG_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg)
-ADD_SUBDIRECTORY(libjpeg)
-
-
-ADD_SUBDIRECTORY(libjxl)
-
 include(FetchContent)
 FetchContent_Declare(
-    LibRaw
-    GIT_REPOSITORY https://github.com/LibRaw/LibRaw/
-    GIT_TAG        9646d77  
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/libraw/LibRaw
+        LibRaw
+        GIT_REPOSITORY https://github.com/LibRaw/LibRaw/
+        GIT_TAG        9646d77
+        SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/libraw/LibRaw
 )
-
 FetchContent_MakeAvailable(LibRaw)
-
-FetchContent_Declare(
-    expat
-    GIT_REPOSITORY https://github.com/libexpat/libexpat/
-    GIT_TAG        f9a3eeb  
-    SOURCE_SUBDIR  expat/
-)
-
-FetchContent_MakeAvailable(expat)
-
 ADD_SUBDIRECTORY(libraw)
-ADD_SUBDIRECTORY(xmp-sdk)
+ADD_SUBDIRECTORY( dngsdk )
 ADD_SUBDIRECTORY(exiv2)
-ADD_SUBDIRECTORY( dng-sdk )
 ADD_SUBDIRECTORY( rawConverter )
 
 if(USE_ASAN)
