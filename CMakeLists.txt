@@ -28,6 +28,7 @@ SET(ENABLE_SHARED FALSE)
 SET(ENABLE_LCMS FALSE)
 SET(EXIV2_ENABLE_PNG FALSE)
 
+message("Downloading Libraw")
 include(FetchContent)
 FetchContent_Declare(
         LibRaw
