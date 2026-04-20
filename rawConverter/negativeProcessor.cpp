@@ -31,18 +31,7 @@
 #include <iostream>
 
 #include <dng_date_time.h>
-#include <dng_simple_image.h>
-#include <dng_camera_profile.h>
-#include <dng_file_stream.h>
-#include <dng_memory_stream.h>
-#include <dng_xmp.h>
 #include <dng_image_writer.h>
-
-#include <zlib.h>
-
-#include <exiv2/error.hpp>
-#include <exiv2/image.hpp>
-#include <exiv2/xmp_exiv2.hpp>
 
 const char* getDngErrorMessage(int errorCode) {
     switch (errorCode) {
@@ -111,40 +100,13 @@ bool NegativeProcessor::operator==(const NegativeProcessor& candidate) const
     return true;
 }
 
-
 std::unique_ptr<NegativeProcessor>  NegativeProcessor::createProcessor(dng_host& host, const char *filename, const char* dcpFilename) {
     // -----------------------------------------------------------------------------------------
     // Open and parse rawfile with libraw...
-
-    std::unique_ptr<LibRaw> rawProcessor(std::make_unique<LibRaw>());
-
-    int ret = rawProcessor->open_file(filename);
-    if (ret != LIBRAW_SUCCESS) {
-        rawProcessor->recycle();
-        std::stringstream error; error << "LibRaw-error while opening rawFile: " << libraw_strerror(ret);
-        throw std::runtime_error(error.str());
-    }
-
-    ret = rawProcessor->unpack();
-    if (ret != LIBRAW_SUCCESS) {
-        rawProcessor->recycle();
-        std::stringstream error; error << "LibRaw-error while unpacking rawFile: " << libraw_strerror(ret);
-        throw std::runtime_error(error.str());
-    }
-
+    auto rawProcessor = getLibRaw((filename));
     // -----------------------------------------------------------------------------------------
     // ...and libexiv2
-
-    Exiv2::Image::UniquePtr rawImage;
-    try {
-        rawImage = Exiv2::ImageFactory::open(filename);
-        rawImage->readMetadata();
-    } 
-    catch (Exiv2::Error& e) {
-        std::stringstream error; error << "Exiv2-error while opening/parsing rawFile (code " << static_cast<size_t>(e.code()) << "): " << e.what();
-        throw std::runtime_error(error.str());
-    }
-
+    auto rawImage = getExivImage(filename);
     // -----------------------------------------------------------------------------------------
     // Identify and create correct processor class
     std::unique_ptr<dng_negative> negative;

@@ -1,6 +1,6 @@
 
 #include <cstring>
-#include <ctime>
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -82,7 +82,7 @@ int main(int argc, const char* argv []) {
         // Call the conversion function
 
         std::cout << "Starting conversion: \"" << rawFilename << "\n";
-        std::time_t startTime = std::time(NULL);
+        auto startTime = std::chrono::steady_clock::now();
 
         try {
             if (isJpeg)      Raw2Dng::raw2jpeg(rawFilename, outFilename, dcpFilename);
@@ -94,7 +94,7 @@ int main(int argc, const char* argv []) {
             return -1;
         }
 
-        std::cout << "--> Done (" << std::difftime(std::time(NULL), startTime) << " seconds)\n\n";
+        std::cout << "--> Done (" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-startTime) << " seconds)\n\n";
 
     }
     return 0;

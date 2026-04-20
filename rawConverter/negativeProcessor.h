@@ -38,6 +38,38 @@ class NegativeProcessor {
 public:
    NegativeProcessor(dng_host& host, std::unique_ptr<dng_negative> negative);
 
+   static std::unique_ptr<LibRaw> getLibRaw(const char* filename) {
+      std::unique_ptr<LibRaw> rawProcessor(std::make_unique<LibRaw>());
+
+      int ret = rawProcessor->open_file(filename);
+      if (ret != LIBRAW_SUCCESS) {
+         rawProcessor->recycle();
+         std::stringstream error; error << "LibRaw-error while opening rawFile: " << libraw_strerror(ret);
+         throw std::runtime_error(error.str());
+      }
+
+      ret = rawProcessor->unpack();
+      if (ret != LIBRAW_SUCCESS) {
+         rawProcessor->recycle();
+         std::stringstream error; error << "LibRaw-error while unpacking rawFile: " << libraw_strerror(ret);
+         throw std::runtime_error(error.str());
+      }
+
+      return rawProcessor;
+   }
+   static std::unique_ptr<Exiv2::Image> getExivImage(const char* filename) {
+
+      Exiv2::Image::UniquePtr rawImage;
+      try {
+         rawImage = Exiv2::ImageFactory::open(filename);
+         rawImage->readMetadata();
+      }
+      catch (Exiv2::Error& e) {
+         std::stringstream error; error << "Exiv2-error while opening/parsing rawFile (code " << static_cast<size_t>(e.code()) << "): " << e.what();
+         throw std::runtime_error(error.str());
+      }
+      return rawImage;
+   }
    static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename, const char* dcpFilename="");
    virtual ~NegativeProcessor();
    bool operator==(const NegativeProcessor& other) const;
