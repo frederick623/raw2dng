@@ -36,8 +36,6 @@ const char* getDngErrorMessage(int errorCode);
 
 class NegativeProcessor {
 public:
-   NegativeProcessor(dng_host& host, std::unique_ptr<dng_negative> negative);
-
    static std::unique_ptr<LibRaw> getLibRaw(const char* filename) {
       std::unique_ptr<LibRaw> rawProcessor(std::make_unique<LibRaw>());
 
@@ -71,6 +69,8 @@ public:
       return rawImage;
    }
    static std::unique_ptr<NegativeProcessor> createProcessor(dng_host& host, const char *filename, const char* dcpFilename="");
+
+   NegativeProcessor(dng_host& host, std::unique_ptr<dng_negative> negative);
    virtual ~NegativeProcessor();
    bool operator==(const NegativeProcessor& other) const;
 

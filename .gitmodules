@@ -1,3 +1,6 @@
 [submodule "dngsdk"]
 	path = dngsdk
 	url = https://github.com/frederick623/dngsdk
+[submodule "libraw/LibRaw"]
+	path = libraw/LibRaw
+	url = https://github.com/LibRaw/LibRaw

@@ -66,8 +66,6 @@ DisabledFeatures.txt
 # debug information files
 *.dwo
 rawConverter/config.h
-rawConverter/rawConverter
-libraw/LibRaw
 libjpeg/
 libjxl/lib
 
