@@ -18,9 +18,11 @@
 
 #include "ILCE7processor.h"
 
+#include <cstring>
 #include <exception>
 #include <stdexcept>
 #include <sstream>
+#include <vector>
 
 #include <dng_xmp.h>
 #include <dng_lens_correction.h>
@@ -29,7 +31,6 @@
 
 #include <libraw/libraw.h>
 #include <exiv2/error.hpp>
-#include <exiv2/tiffimage.hpp>
 
 
 // ---------------------------------------------------------------------------
@@ -321,52 +322,85 @@ dng_memory_stream* ILCE7processor::createDNGPrivateTag() {
     long dpdLength; unsigned char* dpdBuffer;
     if (!getRawExifTag("Exif.Image.DNGPrivateData", &dpdLength, &dpdBuffer))
         return streamPriv;
+    if (dpdLength < 4) {
+        delete[] dpdBuffer;
+        return streamPriv;
+    }
 
     uint32_t SR2offset =
         (dpdBuffer[0] & 0xFF)       | (dpdBuffer[1] & 0xFF) << 8  |
         (dpdBuffer[2] & 0xFF) << 16 | (dpdBuffer[3] & 0xFF) << 24;
 
-    // Build a fake minimal TIFF to let TiffParser reach the SR2-IFD.
-    unsigned char SR2IFD[114];
-    const unsigned char IFDstart[8] = {0x49,0x49,0x2a,0x00,0x08,0x00,0x00,0x00};
-    const unsigned char IFDend[4]   = {0x00,0x00,0x00,0x00};
-    for (int i = 0;   i < 8;   i++) SR2IFD[i]       = IFDstart[i];
-    for (int i = 110; i < 113; i++) SR2IFD[i] = IFDend[i - 110];
-
+    // Read the full SR2 IFD size dynamically (2-byte count + N*12 entries + 4-byte next-IFD).
     Exiv2::BasicIo* io = &m_RawImage->io();
-    Exiv2::ExifData ee; Exiv2::IptcData ii; Exiv2::XmpData xx;
+
     try {
         io->open();
         io->seek(SR2offset, Exiv2::BasicIo::beg);
-        io->read(&SR2IFD[8], 102);
-        Exiv2::TiffParser::decode(ee, ii, xx, SR2IFD, 114);
+
+        unsigned char countBytes[2] = {0, 0};
+        if (io->read(countBytes, 2) != 2) {
+            throw std::runtime_error("Cannot read SR2 IFD entry count");
+        }
+
+        const uint32_t entryCount =
+            static_cast<uint32_t>(countBytes[0]) |
+            (static_cast<uint32_t>(countBytes[1]) << 8);
+
+        // Conservative guardrail: avoids allocating implausibly large buffers on bad metadata.
+        const uint32_t kMaxIFDEntries = 2048;
+        if (entryCount > kMaxIFDEntries) {
+            throw std::runtime_error("SR2 IFD entry count is implausibly large");
+        }
+
+        const uint32_t sr2IfdSize = 2 + (entryCount * 12) + 4;
+        std::vector<unsigned char> sr2IfdData(sr2IfdSize, 0);
+
+        io->seek(SR2offset, Exiv2::BasicIo::beg);
+        if (io->read(sr2IfdData.data(), sr2IfdSize) != static_cast<long>(sr2IfdSize)) {
+            throw std::runtime_error("Cannot read full SR2 IFD payload");
+        }
+
+        // Parse the SR2 IFD manually to avoid Exiv2 warnings about out-of-bounds offsets
+        bool foundOffset = false;
+        bool foundLength = false;
+        uint32_t SR2SubOffset = 0;
+        uint32_t SR2SubLength = 0;
+
+        for (uint32_t i = 0; i < entryCount; i++) {
+            uint32_t entryPos = 2 + (i * 12);
+            uint16_t tag = sr2IfdData[entryPos] | (sr2IfdData[entryPos + 1] << 8);
+            if (tag == 0x7200) {
+                SR2SubOffset = sr2IfdData[entryPos + 8] | (sr2IfdData[entryPos + 9] << 8) |
+                               (sr2IfdData[entryPos + 10] << 16) | (sr2IfdData[entryPos + 11] << 24);
+                foundOffset = true;
+            } else if (tag == 0x7201) {
+                SR2SubLength = sr2IfdData[entryPos + 8] | (sr2IfdData[entryPos + 9] << 8) |
+                               (sr2IfdData[entryPos + 10] << 16) | (sr2IfdData[entryPos + 11] << 24);
+                foundLength = true;
+            }
+        }
+
+        if (foundOffset && foundLength) {
+            uint32_t fullLength = SR2SubOffset - SR2offset + SR2SubLength;
+            bool padding = (fullLength & 0x01) == 0x01;
+
+            AutoPtr<dng_memory_block> SR2block(m_host.Allocate(fullLength));
+            io->seek(SR2offset, Exiv2::BasicIo::beg);
+            io->read(SR2block->Buffer_uint8(), fullLength);
+
+            streamPriv->Put("SR2 ", 4);
+            streamPriv->Put_uint32(fullLength + 2 + 4);
+            streamPriv->Put("II", 2 + (padding ? 1 : 0));
+            streamPriv->Put_uint32(SR2offset);
+            streamPriv->Put(SR2block->Buffer(), fullLength);
+            if (padding) streamPriv->Put_uint8(0x00);
+        }
     }
     catch (Exiv2::Error& e) {
         std::stringstream err;
         err << "Cannot open/parse proprietary Sony SR2-IFD! Exiv2 report: " << e.what();
         throw std::runtime_error(err.str());
-    }
-
-    auto it_offset = ee.findKey(Exiv2::ExifKey("Exif.Image.0x7200"));
-    auto it_length = ee.findKey(Exiv2::ExifKey("Exif.Image.0x7201"));
-
-    if ((it_offset != ee.end()) && (it_length != ee.end())) {
-        uint32_t SR2SubOffset = static_cast<uint32>(it_offset->toUint32(0));
-        uint32_t SR2SubLength = static_cast<uint32>(it_length->toUint32(0));
-
-        uint32_t fullLength = SR2SubOffset - SR2offset + SR2SubLength;
-        bool padding = (fullLength & 0x01) == 0x01;
-
-        AutoPtr<dng_memory_block> SR2block(m_host.Allocate(fullLength));
-        io->seek(SR2offset, Exiv2::BasicIo::beg);
-        io->read(SR2block->Buffer_uint8(), fullLength);
-
-        streamPriv->Put("SR2 ", 4);
-        streamPriv->Put_uint32(fullLength + 2 + 4);
-        streamPriv->Put("II", 2 + (padding ? 1 : 0));
-        streamPriv->Put_uint32(SR2offset);
-        streamPriv->Put(SR2block->Buffer(), fullLength);
-        if (padding) streamPriv->Put_uint8(0x00);
     }
 
     delete[] dpdBuffer;

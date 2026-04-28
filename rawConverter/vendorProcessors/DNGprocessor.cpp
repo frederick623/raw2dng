@@ -8,8 +8,6 @@
 #include <dng_xmp.h>
 #include <dng_info.h>
 
-#include <exiv2/image.hpp>
-
 
 // ---------------------------------------------------------------------------
 // Constructor

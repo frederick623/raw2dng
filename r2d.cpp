@@ -61,7 +61,7 @@ int main(int argc, const char* argv []) {
         {
             std::string option = &argv[index][1];
             if (0 == strcmp(option.c_str(), "o"))   outFilename = std::string(argv[++index]);
-            if (0 == strcmp(option.c_str(), "dcp")) dcpFilename = std::string(argv[++index]);
+            if (0 == strcmp(option.c_str(), "d")) dcpFilename = std::string(argv[++index]);
             if (0 == strcmp(option.c_str(), "j"))   isJpeg = true;
             if (0 == strcmp(option.c_str(), "t"))   isTiff = true;
         }

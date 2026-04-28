@@ -8,7 +8,6 @@
 #include <dng_string.h>
 
 #include <libraw/libraw.h>
-#include <exiv2/exif.hpp>
 
 
 // ---------------------------------------------------------------------------
