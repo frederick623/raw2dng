@@ -25,8 +25,6 @@
 #include <dng_date_time.h>
 #include <dng_negative.h>
 #include <dng_render.h>
-#include <dng_exif.h>
-#include <dng_host.h>
 #include <dng_preview.h>
 #include <exiv2/image.hpp>
 #include <libraw/libraw.h>
@@ -83,10 +81,7 @@ public:
    std::shared_ptr<dng_jpeg_preview> getJpegPreview();
 
    void renderPreviews();
-   void renderImage() { 
-      m_negative->BuildStage2Image(m_host);  // Compute linearized and range-mapped image
-      m_negative->BuildStage3Image(m_host);  // Compute demosaiced image (used by preview and thumbnail)
-   }
+   void renderImage();
 
 protected:
    // Source: Raw-file

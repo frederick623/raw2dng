@@ -27,6 +27,7 @@
 #include "dng_memory_stream.h"
 #include "dng_file_stream.h"
 #include "dng_render.h"
+#include <dng_exif.h>
 #include "dng_simple_image.h"
 #include "dng_color_space.h"
 #include "dng_exceptions.h"
@@ -77,7 +78,7 @@ void RawConverter::writeDng(const std::string inFilename, const std::string& out
 
 std::string RawConverter::merge(const std::unordered_map<std::string, double>& inputs)
 {
-    if (m_negProcessors.size()<=1 or m_negProcessors.size()!=inputs.size() or 
+    if (m_negProcessors.size()<=1 or m_negProcessors.size()!=inputs.size() or
         std::any_of(std::next(m_negProcessors.begin()), m_negProcessors.end(), [&](const auto& pair){
             return m_negProcessors.begin()->second!=pair.second;
         }))
@@ -126,7 +127,7 @@ std::string RawConverter::merge(const std::unordered_map<std::string, double>& i
 
     for (auto it=std::next(m_negProcessors.begin()); it!=m_negProcessors.end(); ++it)
     {
-        
+
     }
 
     return m_negProcessors.begin()->first;
