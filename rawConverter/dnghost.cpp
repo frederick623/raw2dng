@@ -31,6 +31,9 @@
 #include <exception>
 #include "dng_sdk_limits.h"
 
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+
 static std::exception_ptr threadException = nullptr;
 
 static void executeAreaThread(std::reference_wrapper<dng_area_task> task, uint32 threadIndex, const dng_rect &threadArea, const dng_point &tileSize, dng_abort_sniffer *sniffer) {
@@ -38,47 +41,43 @@ static void executeAreaThread(std::reference_wrapper<dng_area_task> task, uint32
    catch (...) { threadException = std::current_exception(); }
 }
 
-
 void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress) {
     dng_point tileSize(task.FindTileSize(area));
 
-    // Now we need to do some resource allocation
-    // We start by assuming one tile per thread, and work our way up
     uint32 vTilesinArea = area.H() / tileSize.v; if ((area.H() - (vTilesinArea * tileSize.v)) > 0) vTilesinArea++;
     uint32 hTilesinArea = area.W() / tileSize.h; if ((area.W() - (hTilesinArea * tileSize.h)) > 0) hTilesinArea++;
 
-    int vTilesPerThread = 1, hTilesPerThread = 1;
-    // Ensure we don't exceed maxThreads for this task
-    while (((vTilesinArea + vTilesPerThread - 1) / vTilesPerThread) * ((hTilesinArea + hTilesPerThread - 1) / hTilesPerThread) > kMaxMPThreads) {
-        // Here we want to increase the number of tiles per thread; so do we do that in the V or H dimension?
-        if ((vTilesinArea / vTilesPerThread) > (hTilesinArea / hTilesPerThread)) vTilesPerThread++;
-        else hTilesPerThread++;
-    }
+    uint32 maxThreads = Min_uint32(task.MaxThreads(), kMaxMPThreads);
+    task.Start(maxThreads, area, tileSize, &Allocator(), Sniffer());
 
-    task.Start(Min_uint32(task.MaxThreads (), kMaxMPThreads), area, tileSize, &Allocator (), Sniffer ());
-
-    std::vector<std::thread> areaThreads;
     threadException = nullptr;
 
-    dng_rect threadArea(area.t, area.l, area.t + (vTilesPerThread * tileSize.v), area.l + (hTilesPerThread * tileSize.h));
-    for (uint32 vIndex = 0; vIndex < vTilesinArea; vIndex += vTilesPerThread) {
+    boost::asio::thread_pool pool(maxThreads);
 
-        for (uint32 hIndex = 0; hIndex < hTilesinArea; hIndex += hTilesPerThread) {
-            try { areaThreads.push_back(std::thread(executeAreaThread, std::ref(task), areaThreads.size(), threadArea, tileSize, Sniffer ())); }
-            catch (...) { executeAreaThread(task, areaThreads.size(), threadArea, tileSize, Sniffer ()); }
+    dng_rect threadArea(area.t, area.l, area.t + tileSize.v, area.l + tileSize.h);
+    uint32 threadIndex = 0;
 
+    for (uint32 vIndex = 0; vIndex < vTilesinArea; vIndex++) {
+        for (uint32 hIndex = 0; hIndex < hTilesinArea; hIndex++) {
+            threadArea.b = Min_int32(threadArea.t + tileSize.v, area.b);
+            threadArea.r = Min_int32(threadArea.l + tileSize.h, area.r);
+
+            uint32 assignedThreadIndex = threadIndex % maxThreads;
+
+            boost::asio::post(pool, [t = std::ref(task), assignedThreadIndex, threadArea, tileSize, s = Sniffer()]() {
+                executeAreaThread(t, assignedThreadIndex, threadArea, tileSize, s);
+            });
+
+            threadIndex++;
             threadArea.l = threadArea.r;
-            threadArea.r = Min_int32(threadArea.r + (hTilesPerThread * tileSize.h), area.r);
         }
-
         threadArea.t = threadArea.b;
         threadArea.l = area.l;
-        threadArea.b = Min_int32(threadArea.b + (vTilesPerThread * tileSize.v), area.b);
-        threadArea.r = area.l + (hTilesPerThread * tileSize.h);
     }
 
-   for (auto& areaThread : areaThreads) areaThread.join();
-   if (threadException) std::rethrow_exception(threadException);
+    pool.join();
 
-   task.Finish(Min_uint32(task.MaxThreads(), kMaxMPThreads));
+    if (threadException) std::rethrow_exception(threadException);
+
+    task.Finish(maxThreads);
 }

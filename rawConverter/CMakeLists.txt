@@ -15,6 +15,11 @@ FIND_PACKAGE( ZLIB )
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
+# Find Boost (version 1.85 or higher for Cobalt)
+cmake_policy(SET CMP0167 NEW)
+SET(Boost_USE_STATIC_LIBS ON)
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+
 ADD_LIBRARY( rawConverter STATIC
                 ${CMAKE_CURRENT_SOURCE_DIR}/dnghost.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/negativeProcessor.cpp
@@ -28,5 +33,5 @@ TARGET_INCLUDE_DIRECTORIES( rawConverter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                          PUBLIC ${CMAKE_BINARY_DIR}
 )
 
-TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dngsdk exiv2lib raw ${ZLIB_LIBRARIES} )
+TARGET_LINK_LIBRARIES( rawConverter PUBLIC xmp-sdk dngsdk exiv2lib raw ${ZLIB_LIBRARIES} ${Boost_LIBRARIES} )
 
