@@ -17,6 +17,7 @@ ADD_DEFINITIONS( ${ZLIB_DEFINITIONS} )
 
 # Find Boost (version 1.85 or higher for Cobalt)
 cmake_policy(SET CMP0167 NEW)
+FIND_PACKAGE(Boost 1.86 REQUIRED )
 SET(Boost_USE_STATIC_LIBS ON)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 

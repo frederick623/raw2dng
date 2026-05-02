@@ -33,6 +33,8 @@ ADD_SUBDIRECTORY( dngsdk )
 ADD_SUBDIRECTORY(exiv2)
 ADD_SUBDIRECTORY( rawConverter )
 
+target_include_directories(rawConverter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 if(USE_ASAN)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
     add_link_options(-fsanitize=address)
