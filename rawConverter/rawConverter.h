@@ -20,16 +20,18 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "dnghost.h"
-#include "negativeProcessor.h"
+class NegativeProcessor;
+class dng_host;
+class dng_negative;
 
 class RawConverter {
 public:
 
    RawConverter(const std::vector<std::string>& rawFilenames, const std::string& dcpFilename);
-   virtual ~RawConverter() = default;
+   virtual ~RawConverter(); // defined in .cpp where DngHost is complete
 
    std::string merge(const std::unordered_map<std::string, double>& inputs);
    static void updateMetadata(dng_negative &negative, dng_host &host, std::size_t inputCount);
@@ -39,6 +41,6 @@ public:
 
 private:
    std::unordered_map<std::string, std::unique_ptr<NegativeProcessor>> m_negProcessors;
-   DngHost m_host;
+   std::unique_ptr<dng_host> m_host;
 
 };

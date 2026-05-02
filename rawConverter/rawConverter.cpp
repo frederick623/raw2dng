@@ -34,23 +34,28 @@
 #include "dng_tag_values.h"
 #include "dng_tag_codes.h"
 #include "dng_xmp.h"
-#include "dng_color_space.h"
+
+#include "dnghost.h"
 
 #include "negativeProcessor.h"
 
+// Destructor defined here — DngHost is a complete type at this point (dnghost.h is included above)
+RawConverter::~RawConverter() = default;
+
 RawConverter::RawConverter(const std::vector<std::string>& rawFilenames, const std::string& dcpFilename)
+    : m_host(std::make_unique<DngHost>())
 {
     // -----------------------------------------------------------------------------------------
     // Init XMP SDK and some global variables we will need
 
-    m_host.SetSaveDNGVersion(dngVersion_SaveDefault);
-    m_host.SetSaveLinearDNG(false);
-    m_host.SetKeepOriginalFile(true);
+    m_host->SetSaveDNGVersion(dngVersion_SaveDefault);
+    m_host->SetSaveLinearDNG(false);
+    m_host->SetKeepOriginalFile(true);
 
     for (const auto& rawFilename : rawFilenames)
     {
         auto pair = m_negProcessors.insert_or_assign(rawFilename
-            , NegativeProcessor::createProcessor(m_host, rawFilename.c_str(), dcpFilename.c_str()));
+            , NegativeProcessor::createProcessor(*m_host, rawFilename.c_str(), dcpFilename.c_str()));
         // -----------------------------------------------------------------------------------------
         // Copy raw sensor data
         pair.first->second->renderImage();
@@ -68,7 +73,7 @@ void RawConverter::writeDng(const std::string inFilename, const std::string& out
 
         auto& m_negProcessor = m_negProcessors[inFilename];
         auto targetFile = dng_file_stream(outFilename.c_str(), true);
-        dng_image_writer().WriteDNG(m_host, targetFile, m_negProcessor->getNegative(), m_negProcessor->getPreview());
+        dng_image_writer().WriteDNG(*m_host, targetFile, m_negProcessor->getNegative(), m_negProcessor->getPreview());
     }
     catch (dng_exception& e) {
         std::stringstream error; error << "Error while writing DNG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
@@ -88,7 +93,7 @@ std::string RawConverter::merge(const std::unordered_map<std::string, double>& i
     const dng_rect bounds = reference->Bounds();
     const uint32 planes = reference->Planes();
 
-    auto *mergedImage = new dng_simple_image(bounds, planes, ttShort, m_host.Allocator());
+    auto *mergedImage = new dng_simple_image(bounds, planes, ttShort, m_host->Allocator());
     dng_pixel_buffer mergedBuffer;
     mergedImage->GetPixelBuffer(mergedBuffer);
 
@@ -149,7 +154,7 @@ void RawConverter::writeTiff(const std::string inFilename, const std::string& ou
         std::unique_ptr<dng_image> negImage(negRender.Render());
 
         auto targetFile = dng_file_stream(outFilename.c_str(), true);
-        dng_image_writer().WriteTIFF(m_host, targetFile, *negImage, piRGB, ccUncompressed,
+        dng_image_writer().WriteTIFF(*m_host, targetFile, *negImage, piRGB, ccUncompressed,
                              &m_negProcessor->getDngMetadata(), &dng_space_sRGB::Get(), NULL,
                              dynamic_cast<const dng_jpeg_preview*>(&m_negProcessor->getPreview()->Preview(1)));
     }
@@ -201,7 +206,7 @@ void RawConverter::writeJpeg(const std::string inFilename, const std::string& ou
     std::unique_ptr<dng_image> negImage(negRender.Render());
 
     auto jpeg = m_negProcessor->getJpegPreview();
-    dng_image_writer().EncodeJPEGPreview(m_host, *negImage, *jpeg, 8);
+    dng_image_writer().EncodeJPEGPreview(*m_host, *negImage, *jpeg, 8);
 
     // -----------------------------------------------------------------------------------------
     // Write JPEG-image to file
